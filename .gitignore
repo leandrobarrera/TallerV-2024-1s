@@ -64,3 +64,5 @@ Release/
 *.zip 
 CMSIS-Full
 CMSIS-All
+
+*.ld
