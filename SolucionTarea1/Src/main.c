@@ -14,6 +14,13 @@
  * If no LICENSE file comes with this software, it is provided AS-IS.
  *
  ******************************************************************************
+ Punto 1. ¿Cúal es este error o errores?
+ -El error constaba en que el shift estaba invertido, y nos movía el dato pinNumber veces, cuando en realidad lo necesitamos
+ en el bit 0, para que nos diera un 1 o 0 (dado que es el unico bit que lo permite). Además de que faltaba otra
+ operación en el código para hacerlo leer el bit 0.
+¿Cómo se pueden solucionar?
+-Se cambió el sentido de los shitfs y ahora si arroja la informacion en el bit 0; luego agregamos una máscara (0b01) con un
+AND (&), para extraer ese 1 o 0 lógico y verificar que el pin está recibiendo información o no.
  */
 
 
