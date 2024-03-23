@@ -221,7 +221,7 @@ void gpio_config_alternate_function (GPIO_Handler_t *pGPIOHandler){
  * Funcion utilizada para cambiar de estado el pin entregado en el handler, asignado
  * el valor entregadoe en la variable newState
  */
-void gpio_WritePin (GPIO_Handler_t * pPinHandler, uint8_t newState){
+void gpio_WritePin (GPIO_Handler_t *pPinHandler, uint8_t newState){
 
 	/*verificamos si la accion que deseamos realizar es permitida */
 	assert_param(IS_GPIO_PIN_ACTION(newState));
@@ -241,14 +241,30 @@ void gpio_WritePin (GPIO_Handler_t * pPinHandler, uint8_t newState){
 /**
  * Funcion para leer el estado de un pin especifico.
  */
-uint32_t gpio_ReadPin (GPIO_Handler_t * pPinHandler){
+uint32_t gpio_ReadPin (GPIO_Handler_t *pPinHandler){
 		// Creamos una variable auxiliar la cual luego retomaremos
 		uint32_t pinValue = 0;
 
-		//Cargamos el valor especifico del IDR, desplazado a derecha tantas veces como la ubicacion
-		// del pin especifico.
-		pinValue = (pPinHandler ->pGPIOx -> IDR << pPinHandler ->pinConfig.GPIO_PinNumber);
-		pinValue = pinValue;
+
+		/* PinValue es una variable a la que se le asigna el IDR (Input Data Register, 32 bits, 16 reservados)
+		 * y luego lo shiftea PinNumber veces, es decir, si escogemos el pin5, lo shiftea 5 veces.
+		 *
+		 */
+		pinValue = (pPinHandler ->pGPIOx -> IDR >> pPinHandler->pinConfig.GPIO_PinNumber);
+
+
+
+		/* Luego de moverlo, aplicamos una mascara porque nos importa el bit 0, que es el que nos devuelve un 1 o un 0
+		 * lo que nos indicaria si el pin esta recibiendo informacion, para obtener el bit 0 se aplica
+		 * la operacion AND (&) */
+
+
+		pinValue &= 0b1 ;
+
+		/* teniendo presente que la variable pinValue contiene el IDR y su lectura sabemos que
+		estamos leyendo el valor del pinX, y nos retornara un 0 o un 1 logico.
+		 si nos retorna un 1 quiere decir que si esta recibiendo informacion,
+		de lo contrario no lo esta.. */
 
 		return pinValue;
 }
@@ -264,4 +280,18 @@ uint32_t gpio_ReadPin (GPIO_Handler_t * pPinHandler){
 
 /**/
 void gpio_TooglePin (GPIO_Handler_t *pPinHandler){
-}
+
+	/* se usan condicionales para cambiar  el valor del pin si la funcion GPIO_ReadPin retorna un 0 entonces se
+	 *cambiara ese valor por un 1 con la funcion GPIO_WritePin y el valor SET, mientras que con el else pasara lo
+	 *contrario
+	 */
+
+	if (gpio_ReadPin(pPinHandler) == 0){
+			gpio_WritePin(pPinHandler, SET);
+
+	}
+	else{
+		(gpio_WritePin(pPinHandler, RESET));
+	}
+	}
+

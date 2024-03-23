@@ -46,10 +46,11 @@ int main(void)
 
 		gpio_WritePin(&userLed, SET);
 		gpio_WritePin(&userLed, RESET);
-
+		gpio_ReadPin (&userLed);
+		gpio_TooglePin(&userLed);
 	/* Loop forever */
 	while(1){
-
+		gpio_TooglePin(&userLed);
 	}
 }
 
@@ -62,5 +63,10 @@ void assert_failed(uint8_t * file, uint32_t line){
 		//problems...
 	}
 }
+
+
+
+
+
 
 
