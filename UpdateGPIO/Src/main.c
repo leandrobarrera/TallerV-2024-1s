@@ -8,21 +8,29 @@
  *
  * Copyright (c) 2024 STMicroelectronics.
  * All rights reserved.
- *
  * This software is licensed under terms that can be found in the LICENSE file
  * in the root directory of this software component.
  * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
-#include "stm32f4xx.h"
+ **/
+#include <stm32f4xx.h>
 #include <stdint.h>
+#include "gpio_driver_hal.h"
+//Handler
+GPIO_Handler_t userLed = {0};
+int main(void)
+{
+	/*	Configuramos el pin*/
+	userLed.pGPIOx 							= 	GPIOA;
+	userLed.pinConfig.GPIO_PinNumber		=	PIN_5;
+	userLed.pinConfig.GPIO_PinMode			=	GPIO_MODE_OUT;
+	userLed.pinConfig.GPIO_PinOutputType	=	GPIO_OTYPE_PUSHPULL;
+	userLed.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;
+	userLed.pinConfig.GPIO_PinPuPdControl	=	GPIO_PUPDR_NOTHING;
 
-#if !defined(__SOFT_FP__) && defined(__ARM_FP)
-  #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
-#endif
+	/* Cargamos la configuracion de los registros que gobiernan el puerto */
+	gpio_Config(&userLed);
 
-int main(void) {
+	gpio_WritePin(&userLed, SET);
 
     /* Loop forever */
 	while(1){

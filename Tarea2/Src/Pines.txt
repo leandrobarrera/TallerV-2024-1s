@@ -1,0 +1,26 @@
+1 Definimos los pines que que se van a utilizar
+PinA5 userdLed
+PinC6 LedD
+PinA7 
+PinC8 
+PinA9 LedB
+PinC9 
+PinA6 LedF 
+PinA8 
+PinB12 
+PinA10 
+PinB5 
+PinB3 
+PinB13 
+
+
+
+GPIO_Handler_t userLed = {0}; //	PinA5
+GPIO_Handler_t LedA = {0}; //	PinC7
+GPIO_Handler_t LedB = {0}; //	PinA9
+GPIO_Handler_t LedC = {0}; //	PinCB6
+GPIO_Handler_t LedD = {0}; //	PinC6
+GPIO_Handler_t LedE = {0}; //	PinB9
+GPIO_Handler_t LedF = {0}; //	PinA6
+GPIO_Handler_t LedG = {0}; //	PinA0
+GPIO_Handler_t UD = {0}; //	PinC13
