@@ -2,7 +2,7 @@
 
 timer_driver_hal.h*
 Created on: Ago 11, 202
-Author: Leandro Barrera Salas
+Author: lbarreras
 */
 
 #ifndef INCTIMER_DRIVER_HAL_H

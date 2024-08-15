@@ -2,7 +2,7 @@
  *  timer_driver_hal.c
  *
  *  Created: Aug 10, 2024
- *  Author: Leandro Barrera Salas
+ *  Author: lbarreras
  */
 #include "stm32f4xx.h"
 #include "stm32_assert.h"
