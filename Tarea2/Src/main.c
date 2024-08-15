@@ -100,7 +100,7 @@ int main(void)
 
 	display.pTIMx 							= TIM3;
 	display.TIMx_Config.TIMx_Prescaler		=16000;  //	Genera incrementos de 1ms
-	display.TIMx_Config.TIMx_Period			=15;  //	60FPS ultra calidad gamer.
+	display.TIMx_Config.TIMx_Period			=8;  //	60FPS ultra calidad gamer. Se tuvo que subir porque no se veía fluido el refresco, antes era 15, que significaban 60 FPS
 	display.TIMx_Config.TIMx_mode			=TIMER_UP_COUNTER;  //
 	display.TIMx_Config.TIMx_InterruptEnable	=TIMER_INT_ENABLE;  //
 
@@ -132,7 +132,9 @@ int main(void)
 
 
 	/*configuramos los pines, y cargamos las configuraciones asi como aprendimos en la tarea #1, nada nuevo. Aqui
-	 * los "leds" son las divisiones que tiene 7segmentos (a,b,c,d....)
+	 * los "leds" son las divisiones que tiene el 7segmentos (a,b,c,d....), entonces los pines van a estas divisiones
+	 * y encienden estos "leds" enumerados alfabeticamente. El 7segmentos tambien puede verse como un pin muy grande con
+	 * varias conexiones.
 	 */
 
 	/*	LedA	*/
@@ -232,9 +234,10 @@ int main(void)
 		decenas = contador/10;
 
 		/* aqui decidimos usar WritePin "a la fuerza" es decir, sabemos que partes del 7segmentos se encienden
-		 * para cada numero, entonces es solo plantear que leds encender para cada numero, haciendo esto uno
+		 * para cada numero, entonces es solo plantear que leds encender para cada numero, haciendo esto, uno
 		 * para las decenas y otro para las unidades. Tambien se pudo usar una variable auxiliar como se hizo
-		 * en la tarea #1, pero con esto aunque algo tosco se muestre, ahorra codigo y es mas eficiente.
+		 * en la tarea #1, pero con esto aunque algo tosco se muestre, ahorra codigo y es mas eficiente, ya que solo
+		 * ponemos 1 o 0.
 		 */
 
 
@@ -426,11 +429,12 @@ int main(void)
 
 
 
-/* en este callback se sube y baja la bandera (UIF) permitiendo que se dé la interrupcion y no quede
+/* en este callback se sube y baja la bandera (UIF) permitiendo que se de la interrupcion y no quede
  * interrumpido indefinidamente, al mismo tiempo siendo este el timer que usamos para nuestro contador de segundos
  * hacemos que durante esta interrupcion (de 1 seg, valga la redundancia) se nos sume a una variable auxiliar que llamamos
  * contador, que es la que nos ayuda en la parte del codigo del display, para ir mostrando los numeros en el momento que
- * necesitamos
+ * necesitamos. Es decir cuando se hace la interrupcion, esta misma (administrada por el timer2) suma +1 al contador.
+ * Esta parte del codigo ademas de mandar la interrupcion, tambien detiene la misma.
  */
 
 void Timer2_Callback(void){
@@ -448,7 +452,7 @@ void Timer3_Callback(void){
  * que no sirve esta interrupcion. A grandes rasgos sirve para saber que el sistema funciona.
  */
 void Timer5_Callback(void){
-	gpio_TooglePin(&userLed);
+	gpio_WritePin(&userLed);
 }
 
 

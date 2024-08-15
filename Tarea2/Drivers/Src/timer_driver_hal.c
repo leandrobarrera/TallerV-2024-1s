@@ -20,11 +20,11 @@ static void timer_set_mode(Timer_Handler_t *pTimerHandler);
 static void timer_config_interrupt(Timer_Handler_t *pTimerHandler);
 
 /*
- *
- *
- *
- *
- *
+ *Para cualquier periferico, hay varios pasos que siempre se deben seguir en un orden
+ * estricto para poder que el sistema permita configurar el periferico X
+ *Lo primero y mas importante es activar la señal del reloj principal hacia ese
+ * elemento especifico (relacionado al periferico RCC), a esto llamaremos
+ * simplemente "activar el periferico o activar la señal de reloj del periferico".
  *
  *
  *
