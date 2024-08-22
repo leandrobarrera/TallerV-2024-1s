@@ -68,6 +68,20 @@ int main(void)
 		 * ponemos 1 o 0.
 		 */
 
+		/*NOTA IMPORTANTE: en esta parte del codigo se hizo algo muy importante, crear una bandera llamada display_flag
+		 * y se activa cada 33ms con el soporte del Timer 3. Se usa esta bandera para el correcto entendimiento de las
+		 * interrupciones. Este display flag empieza definida en 0 y cuando se cumple el primer ciclo dentro del micro
+		 * el Timer3 la pone en 1, lo que hace que entre en este if que tenemos a continuacion.
+		 *
+		 * Con respecto al display_select es una variable igual de importante que display_flag, porque es la que habilita
+		 * el switcheo correcto de los transistores, por tanto de que se pinten, apaguen y enciendan el display
+		 * izquierdo y derecho es responsable esta variable. Usamos un XOR para poder hacer este switcheo, esta compuerta
+		 * son dos ANDs que comparten una entrada y convergen en una compuerta logica OR. Lo clave de esto en este proceso
+		 * es que con esta operacion cambiamos el valor logico de esta variable display_select los que nos permite entrar en
+		 * la configuracion de las unidades o las decenas, y hagan sus respectivos procesos, sin sobreescribirse
+		 * y evitando la generacion de fantasmas.
+		 */
+
 		if (display_flag){
 			if(display_select){
 				display_flag = 0;
@@ -165,13 +179,17 @@ int main(void)
 						gpio_WritePin(&LedG, 1);
 					}
 					gpio_WritePin(&switcheoD,0);
+					//este GPIO aunque este puesto con 0 en su entrada logica, por ser un 7segmentos
+					//con catodo comun en realidad prende la parte derecha del mismo y no apaga (lo que uno esperaria por ser 0 esta entrada logica) y vicerversa.
+
 					//despues de cumplir con todas sus funciones, lo ponemos en 0.
 				}
 			else {
+				//cuando display_select sea 0, entra aqui
+
 					display_flag = 0;
 					display_select^=1;
 					gpio_WritePin(&switcheoD,1);
-				/* error en esto, se genera un fantasma, ya que esta toogleando y haciendo la limpieza al tiempo*/
 
 					if (decenas == 0){
 						gpio_WritePin(&LedA, 1);
