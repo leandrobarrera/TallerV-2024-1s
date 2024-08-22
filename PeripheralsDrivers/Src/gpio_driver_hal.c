@@ -28,7 +28,7 @@ void gpio_config_alternate_function (GPIO_Handler_t *pGPIOHandler);
 void gpio_Config (GPIO_Handler_t *pGPIOHandler){
 
 	/* Verificamos que el pin seleccionado es correcto */
-	assert_param(IS_GPIO_PIN(pGPIOHandler -> pinConfig.GPIO_PinNumber));
+	assert_param(IS_GPIO_PIN(pGPIOHandler->pinConfig.GPIO_PinNumber));
 
 	// 1) Activar el periferico
 	gpio_enable_clock_peripheral(pGPIOHandler);
@@ -221,7 +221,7 @@ void gpio_config_alternate_function (GPIO_Handler_t *pGPIOHandler){
  * Funcion utilizada para cambiar de estado el pin entregado en el handler, asignado
  * el valor entregadoe en la variable newState
  */
-void gpio_WritePin (GPIO_Handler_t *pPinHandler, uint8_t newState){
+void gpio_WritePin(GPIO_Handler_t *pPinHandler, uint8_t newState){
 
 	/*verificamos si la accion que deseamos realizar es permitida */
 	assert_param(IS_GPIO_PIN_ACTION(newState));
@@ -268,16 +268,6 @@ uint32_t gpio_ReadPin (GPIO_Handler_t *pPinHandler){
 
 		return pinValue;
 }
-
-
-
-
-
-
-
-
-
-
 
 /**/
 void gpio_TooglePin (GPIO_Handler_t *pPinHandler){
