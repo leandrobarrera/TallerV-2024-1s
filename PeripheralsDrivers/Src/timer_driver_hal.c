@@ -160,6 +160,9 @@ void timer_config_interrupt(Timer_Handler_t *pTimerHandler){
         else if(pTimerHandler->pTIMx == TIM3){
             NVIC_EnableIRQ(TIM3_IRQn);
         }
+        else if(pTimerHandler->pTIMx == TIM4){
+                  NVIC_EnableIRQ(TIM4_IRQn);
+              }
         else if(pTimerHandler->pTIMx == TIM5){
             NVIC_EnableIRQ(TIM5_IRQn);
         }
@@ -178,6 +181,9 @@ void timer_config_interrupt(Timer_Handler_t *pTimerHandler){
             else if(pTimerHandler->pTIMx == TIM3){
                 NVIC_DisableIRQ(TIM3_IRQn);
             }
+            else if(pTimerHandler->pTIMx == TIM4){
+                          NVIC_DisableIRQ(TIM4_IRQn);
+                      }
             else if(pTimerHandler->pTIMx == TIM5){
                 NVIC_DisableIRQ(TIM5_IRQn);
             }
