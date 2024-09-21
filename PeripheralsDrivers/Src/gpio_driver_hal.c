@@ -160,7 +160,7 @@ void gpio_config_output_speed (GPIO_Handler_t * pGPIOHandler){
 	pGPIOHandler ->pGPIOx ->OSPEEDR &= ~(0b11 << 2 * pGPIOHandler ->pinConfig.GPIO_PinNumber);
 
 	// cargamos el resultado sobre el registro adecuado
-	pGPIOHandler ->pGPIOx ->OTYPER |= auxConfig;
+	pGPIOHandler ->pGPIOx ->OSPEEDR |= auxConfig;
 }
 
 

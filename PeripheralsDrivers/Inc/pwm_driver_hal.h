@@ -36,8 +36,8 @@ typedef struct
 	uint8_t 	channel;		// Canal PWM relacionado con el TIMER
 	uint32_t 	prescaler;		// A que velocidad se incrementa en el Timer
 	uint16_t 	periodo;		// Indica el numero de veces que el Timer se incrementa, el periodo de la frecuencia viene dado
-	uint16_t 	duttyCicle;		// Canal PWM relacionado con el TIMER
-	uint8_t 	polarity;		// Canal PWM relacionado con el TIMER
+	uint16_t 	duttyCicle;		// Valor en porcentaje (%) del tiempo que la señal esta en alto
+	uint8_t 	polarity;		// Polaridad de la señal de salida.
 }PWM_Config_t;
 
 /**/

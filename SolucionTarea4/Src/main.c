@@ -7,24 +7,20 @@
  * fecha 		    : 17/09/2024
  ******************************************************************************
  */
-#include  <stdio.h>
 #include <stdint.h>
-#include  <stdbool.h>
+#include <stdbool.h>
 #include <string.h>
-#include <stm32f4xx.h>
 #include "stm32f4xx.h"
 #include "stm32_assert.h"
 #include "gpio_driver_hal.h"
 #include "timer_driver_hal.h"
-#include "adc_driver_hal.h"
 #include "usart_driver_hal.h"
-#include "exti_driver_hal.h"
 #include "i2c_driver_hal.h"
 
 
 
 // Definicion de los handlers necesario
-GPIO_Handler_t userLed = {0}
+GPIO_Handler_t userLed = {0};
 
 GPIO_Handler_t handlerLedRed = {0};
 GPIO_Handler_t handlerLedGreen = {0};
@@ -32,7 +28,7 @@ GPIO_Handler_t handlerLedBlue = {0};
 
 // Comunicacion R232 con el PC, ya habilitada en el board ucleo
 // Utiliza la conexion USB
-USART_Handler_t commSerial = {0};
+USART_Handler_t commserial = {0};
 
 GPIO_Handler_t pinTx = {0};
 GPIO_Handler_t pinRx = {0};
@@ -45,11 +41,11 @@ Timer_Handler_t updateCounter = {0};
 /* Pines para el I2C */
 GPIO_Handler_t pinSCL = {0};
 GPIO_Handler_t pinSDA = {0};
-I2C_Handler_ t accelSensor = {0};
+I2C_Handler_t accelSensor = {0};
 uint8_t i2c_AuxBuffer = {0};
 
 /* registros y valores relacionados con el MPU */
-#define ACCEL_ADDRESS	0b1101000;	// 0xD0 -> Direccion del Accel con Logic_0
+#define ACCEL_ADDRESS	0b1101001;	// 0xD1 -> Direccion del Accel con Logic_0
 #define ACCEL_XOUT_H	59	// 0x3B
 #define ACCEL_XOUT_L	60	// 0x3C
 #define ACCEL_YOUT_H	61	// 0x3D
@@ -86,7 +82,7 @@ int main(void){
 
 	config_I2C();
 
-	usart_writeMsg(&commSerial, greetingMsg);
+	usart_writeMsg(&commserial, greetingMsg);
 
 	/* Loop forever */
 	while(1){
@@ -98,89 +94,89 @@ int main(void){
 	if(receivedChar != '\0'){
 		if(receivedChar == 'm'){
 			// Presentamos un mensaje
-			usart_writeMsg(&commSerial, bufferData);
+			usart_writeMsg(&commserial, bufferData);
 			receivedChar = '\0';
 		}
 
 	if (receivedChar == 'w'){
 		sprintf(bufferData, "WHO_AM_I? (r)\n");
-		usart_writeMsg(&commSerial, bufferData);
+		usart_writeMsg(&commserial, bufferData);
 
 		i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, WHO_AM_I);
 		sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2c_AuxBuffer);
-		usart_writeMsg(&commSerial, bufferData);
+		usart_writeMsg(&commserial, bufferData);
 		receivedChar = '\0';
 	}
 
 	else if (receivedChar == 'p'){
 		sprintf(bufferData, "PWM_MGMT_1_state (r)\n");
-		usart_writeMsg(&commSerial, bufferData);
+		usart_writeMsg(&commserial, bufferData);
 
-		i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, PWR_MGMT_1);
+		i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, PWM_MGMT_1);
 		sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2c_AuxBuffer);
-		usart_writeMsg(&commSerial, bufferData);
+		usart_writeMsg(&commserial, bufferData);
 		receivedChar = '\0';
 	}
 
 	else if (receivedChar == 'r'){
 		sprintf(bufferData, "PWM_MGMT_1_reset (w)\n");
-		usart_writeMsg(&commSerial, bufferData);
+		usart_writeMsg(&commserial, bufferData);
 
-		i2c_WriteSingleRegister(&accelSensor, PWM_MGMT_1, 0x00);
+		i2c_WriteSingleRegisters(&accelSensor, PWM_MGMT_1, 0x00);
 		receivedChar = '\0';
 	}
 
 	else if(receivedChar == 'x'){
-	    			sprintf(bufferData, "Axis x data  (r)\n ");
-	    			usart_writeMsg(&commserial, bufferData);
+		sprintf(bufferData, "Axis x data  (r)\n ");
+		usart_writeMsg(&commserial, bufferData);
 
-	    			uint8_t AccelLX_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_XOUT_L);
-	    			uint8_t AccelLX_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_XOUT_H);
-	    			int16_t AccelX = AccelLX_high << 8 |  AccelLX_low;
-	    			sprintf(bufferData, "Accelx = %d \n",  (int) AccelX);
-	    			usart_writeMsg(&commserial, bufferData);
-	    			receivedChar = '\0';
+		uint8_t AccelLX_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_XOUT_L);
+		uint8_t AccelLX_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_XOUT_H);
+		int16_t AccelX = AccelLX_high << 8 |  AccelLX_low;
+		sprintf(bufferData, "Accelx = %d \n",  (int) AccelX);
+		usart_writeMsg(&commserial, bufferData);
+		receivedChar = '\0';
 
-					}
-	    		else if(receivedChar == 'y'){
-	    			sprintf(bufferData, "Axis y data  (r)\n ");
-	    			usart_writeMsg(&commserial, bufferData);
+		}
+	else if(receivedChar == 'y'){
+		sprintf(bufferData, "Axis y data  (r)\n ");
+		usart_writeMsg(&commserial, bufferData);
 
-	    			uint8_t AccelLY_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_YOUT_L);
-	    			uint8_t AccelLY_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_YOUT_H);
-	    			int16_t AccelY = AccelLY_high << 8 |  AccelLY_low;
-	    			sprintf(bufferData, "AccelY = %d \n",  (int) AccelY);
-	    			usart_writeMsg(&commserial, bufferData);
-	    			receivedChar = '\0';
+		uint8_t AccelLY_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_YOUT_L);
+		uint8_t AccelLY_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_YOUT_H);
+		int16_t AccelY = AccelLY_high << 8 |  AccelLY_low;
+		sprintf(bufferData, "AccelY = %d \n",  (int) AccelY);
+		usart_writeMsg(&commserial, bufferData);
+		receivedChar = '\0';
 
-	    			}
-	    		else if(receivedChar == 'z'){
-	    			sprintf(bufferData, "Axis z data  (r)\n ");
-	    			usart_writeMsg(&commserial, bufferData);
+		}
+	else if(receivedChar == 'z'){
+		sprintf(bufferData, "Axis z data  (r)\n ");
+		usart_writeMsg(&commserial, bufferData);
 
-	    			uint8_t AccelLZ_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_ZOUT_L);
-	    			uint8_t AccelLZ_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_ZOUT_H);
-	    			int16_t AccelZ = AccelLZ_high << 8 |  AccelLZ_low;
-	    			sprintf(bufferData, "AccelZ = %d \n",  (int) AccelZ);
-	    			usart_writeMsg(&commserial, bufferData);
-	    			receivedChar = '\0';
+		uint8_t AccelLZ_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_ZOUT_L);
+		uint8_t AccelLZ_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_ZOUT_H);
+		int16_t AccelZ = AccelLZ_high << 8 |  AccelLZ_low;
+		sprintf(bufferData, "AccelZ = %d \n",  (int) AccelZ);
+		usart_writeMsg(&commserial, bufferData);
+		receivedChar = '\0';
 
-	    			}
-	    		else if(receivedChar == 'q'){
-	    			sprintf(bufferData, "All 3 axis  (r)\n ");
-	    			usart_writeMsg(&commserial, bufferData);
+		}
+	else if(receivedChar == 'q'){
+		sprintf(bufferData, "All 3 axis  (r)\n ");
+		usart_writeMsg(&commserial, bufferData);
 
-	    			uint8_t AccelData[6] = {0};
-	    			i2c_ReadManyRegisters(&accelSensor, ACCEL_XOUT_H, AccelData, 6);
-	    			int16_t AccelX = AccelData[0] << 8 | AccelData[1];
-	    			int16_t AccelY = AccelData[2] << 8 | AccelData[3];
-	    			int16_t AccelZ = AccelData[4] << 8 | AccelData[5];
-	    			sprintf(bufferData, "Accel x,y,z -> %d;  %d; %d \n", (int) AccelX, (int) AccelY, (int) AccelZ);
-	    			usart_writeMsg(&commserial, bufferData);
-	    			receivedChar = '\0';
-	    			}
+		uint8_t AccelData[6] = {0};
+		i2c_ReadManyRegisters(&accelSensor, ACCEL_XOUT_H, AccelData, 6);
+		int16_t AccelX = AccelData[0] << 8 | AccelData[1];
+		int16_t AccelY = AccelData[2] << 8 | AccelData[3];
+		int16_t AccelZ = AccelData[4] << 8 | AccelData[5];
+		sprintf(bufferData, "Accel x,y,z -> %d;  %d; %d \n", (int) AccelX, (int) AccelY, (int) AccelZ);
+		usart_writeMsg(&commserial, bufferData);
+		receivedChar = '\0';
+		}
 
-	    		receivedChar = '\0';
+		receivedChar = '\0';
 
 
 
@@ -197,22 +193,25 @@ int main(void){
 
 void initSystem(void)
 {
-	// Configurando el pin para el Led_Blinky
-	userLed.pGPIOx                          = GPIOH;
-	userLed.pinConfig.GPIO_PinNumber        = PIN_1;
-	userLed.pinConfig.GPIO_PinMode          = GPIO_MODE_OUT;
-	userLed.pinConfig.GPIO_PinOutputType    = GPIO_OTYPE_PUSHPULL;
-	userLed.pinConfig.GPIO_PinoutSpeed   	= GPIO_OSPEED_FAST;
-	userLed.pinConfig.GPIO_PinPuPdControl   = GPIO_PUPDR_NOTHING;
+	/*	Configuramos el pin*/
+	userLed.pGPIOx 							= 	GPIOA;
+	userLed.pinConfig.GPIO_PinNumber		=	PIN_5;
+	userLed.pinConfig.GPIO_PinMode			=	GPIO_MODE_OUT;
+	userLed.pinConfig.GPIO_PinOutputType	=	GPIO_OTYPE_PUSHPULL;
+	userLed.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;
+	userLed.pinConfig.GPIO_PinPuPdControl	=	GPIO_PUPDR_NOTHING;
+
+	/* Cargamos la configuracion de los registros que gobiernan el puerto */
 	gpio_Config(&userLed);
+	gpio_WritePin(&userLed, 1);
 
 	// Configuramos el timer2 para que funcione como blinky
-	blinkTimer.pTIMx								= TIM2;
-	blinkTimer.TIMx_Config.TIMx_Prescaler			= 16000; //	genera incremento  de 1 ms
-	blinkTimer.TIMx_Config.TIMx_Period 				= 500; 	//	de la mano con el prescaler
-	blinkTimer.TIMx_Config.TIMx_mode 				=TIMER_UP_COUNTER;
-	blinkTimer.TIMx_Config.TIMx_InterruptEnable 	=TIMER_INT_ENABLE;
-	timer_Config(&blinkTimer);
+	blinkyTimer.pTIMx								= TIM2;
+	blinkyTimer.TIMx_Config.TIMx_Prescaler			= 16000; //	genera incremento  de 1 ms
+	blinkyTimer.TIMx_Config.TIMx_Period 				= 500; 	//	de la mano con el prescaler
+	blinkyTimer.TIMx_Config.TIMx_mode 				=TIMER_UP_COUNTER;
+	blinkyTimer.TIMx_Config.TIMx_InterruptEnable 	=TIMER_INT_ENABLE;
+	timer_Config(&blinkyTimer);
 
 	// Configuramos el Timer (refresco 10 ms)
 	updateDisplayTimer.pTIMx								= TIM3;
@@ -236,7 +235,7 @@ void initSystem(void)
 	pinTx.pinConfig.GPIO_PinNumber        = PIN_2;
 	pinTx.pinConfig.GPIO_PinMode          = GPIO_MODE_ALTFN;
 	pinTx.pinConfig.GPIO_PinAltFunMode	  = AF7;
-	pinTx.pinConfig.GPIO_PinoutSpeed   	  = GPIO_OSPEED_FAST;
+	pinTx.pinConfig.GPIO_PinOutputSpeed   = GPIO_OSPEED_FAST;
 	pinTx.pinConfig.GPIO_PinPuPdControl   = GPIO_PUPDR_NOTHING;
 
 	/* Escribimos la configuracion en la memoria del MCU */
@@ -246,9 +245,9 @@ void initSystem(void)
 	pinRx.pGPIOx                          = GPIOA;
 	pinRx.pinConfig.GPIO_PinNumber        = PIN_3;
 	pinRx.pinConfig.GPIO_PinMode          = GPIO_MODE_ALTFN;
-	pinTx.pinConfig.GPIO_PinAltFunMode	  = AF7;
+	pinRx.pinConfig.GPIO_PinAltFunMode	  = AF7;
 	pinRx.pinConfig.GPIO_PinOutputType    = GPIO_OTYPE_PUSHPULL;
-	pinRx.pinConfig.GPIO_PinoutSpeed   	  = GPIO_OSPEED_FAST;
+	pinRx.pinConfig.GPIO_PinOutputSpeed   	  = GPIO_OSPEED_FAST;
 	pinRx.pinConfig.GPIO_PinPuPdControl   = GPIO_PUPDR_NOTHING;
 
 	/* Escribimos la configuracion en la memoria del MCU */
@@ -271,7 +270,7 @@ void initSystem(void)
 	usart_WriteChar(&commserial, '\0');
 
 	/* Encendemos los timers */
-	timer_SetState(&blinkTimer, TIMER_ON);
+	timer_SetState(&blinkyTimer, TIMER_ON);
 	timer_SetState(&updateDisplayTimer, TIMER_ON);
 	timer_SetState(&updateCounter, TIMER_ON);
 }
@@ -280,11 +279,11 @@ void initSystem(void)
 void config_I2C(void)
 {
 	pinSCL.pGPIOx 								= GPIOB;
-	pinSCL.pinConfig.GPIO_PinNumber        		= PIN_8;
+	pinSCL.pinConfig.GPIO_PinNumber        		= PIN_6;
 	pinSCL.pinConfig.GPIO_PinMode          		= GPIO_MODE_ALTFN;
 	pinSCL.pinConfig.GPIO_PinAltFunMode	  		= AF4;
 	pinSCL.pinConfig.GPIO_PinOutputType   		= GPIO_OTYPE_OPENDRAIN;
-	pinSCL.pinConfig.GPIO_PinoutSpeed   	  	= GPIO_OSPEED_FAST;
+	pinSCL.pinConfig.GPIO_PinOutputSpeed   	  	= GPIO_OSPEED_FAST;
 	pinSCL.pinConfig.GPIO_PinPuPdControl  		= GPIO_PUPDR_NOTHING;
 	gpio_Config(&pinSCL);
 
@@ -293,14 +292,14 @@ void config_I2C(void)
 	pinSDA.pinConfig.GPIO_PinMode          		= GPIO_MODE_ALTFN;
 	pinSDA.pinConfig.GPIO_PinAltFunMode	  		= AF4;
 	pinSDA.pinConfig.GPIO_PinOutputType    		= GPIO_OTYPE_OPENDRAIN;
-	pinSDA.pinConfig.GPIO_PinoutSpeed   	  	= GPIO_OSPEED_FAST;
+	pinSDA.pinConfig.GPIO_PinOutputSpeed   	  	= GPIO_OSPEED_FAST;
 	pinSDA.pinConfig.GPIO_PinPuPdControl   		= GPIO_PUPDR_NOTHING;
 	gpio_Config(&pinSDA);
 
 	accelSensor.pI2Cx  			= I2C1;
 	accelSensor.i2c_mainClock   = I2C_MAIN_CLOCK_16_Mhz;
-	accelSensor.i2c_mode		=	 eI2C_MODE_SM;
-	accelSensor.slaveAddress    = ACCEL_ADDRES;
+	accelSensor.i2c_mode		= eI2C_MODE_SM;
+	accelSensor.slaveAddress    = ACCEL_ADDRESS;
 	i2c_Config(&accelSensor);
 }
 
@@ -312,56 +311,56 @@ void config_LedRGB(void)
 	handlerLedRed.pinConfig.GPIO_PinMode          = GPIO_MODE_OUT;
 	handlerLedRed.pinConfig.GPIO_PinOutputType    = GPIO_OTYPE_PUSHPULL;
 	handlerLedRed.pinConfig.GPIO_PinPuPdControl   = GPIO_PUPDR_NOTHING;
-	handlerLedRed.pinConfig.GPIO_PinoutSpeed   	  = GPIO_OSPEED_FAST;
+	handlerLedRed.pinConfig.GPIO_PinOutputSpeed   = GPIO_OSPEED_FAST;
 	gpio_Config(&handlerLedRed);
-	gpio_WritePin(&handlerLedRed, RESET); // comienza apagado el led
+	gpio_WritePin(&handlerLedRed, SET); // comienza apagado el led
 
 	handlerLedGreen.pGPIOx 							= GPIOC;
 	handlerLedGreen.pinConfig.GPIO_PinNumber        = PIN_9;
 	handlerLedGreen.pinConfig.GPIO_PinMode          = GPIO_MODE_OUT;
 	handlerLedGreen.pinConfig.GPIO_PinOutputType    = GPIO_OTYPE_PUSHPULL;
 	handlerLedGreen.pinConfig.GPIO_PinPuPdControl   = GPIO_PUPDR_NOTHING;
-	handlerLedGreen.pinConfig.GPIO_PinoutSpeed   	  = GPIO_OSPEED_FAST;
+	handlerLedGreen.pinConfig.GPIO_PinOutputSpeed   	  = GPIO_OSPEED_FAST;
 	gpio_Config(&handlerLedGreen);
-	gpio_WritePin(&handlerLedGreen, RESET); // comienza apagado el led
+	gpio_WritePin(&handlerLedGreen, SET); // comienza apagado el led
 
 	handlerLedBlue.pGPIOx 							= GPIOC;
 	handlerLedBlue.pinConfig.GPIO_PinNumber         = PIN_8;
 	handlerLedBlue.pinConfig.GPIO_PinMode           = GPIO_MODE_OUT;
 	handlerLedBlue.pinConfig.GPIO_PinOutputType     = GPIO_OTYPE_PUSHPULL;
 	handlerLedBlue.pinConfig.GPIO_PinPuPdControl    = GPIO_PUPDR_NOTHING;
-	handlerLedBlue.pinConfig.GPIO_PinoutSpeed   	= GPIO_OSPEED_FAST;
+	handlerLedBlue.pinConfig.GPIO_PinOutputSpeed   	= GPIO_OSPEED_FAST;
 	gpio_Config(&handlerLedBlue);
-	gpio_WritePin(&handlerLedBlue, RESET); // comienza apagado el led
+	gpio_WritePin(&handlerLedBlue, SET); // comienza apagado el led
 }
 
 	/*
 	 * Overwrite Function
 	 **/
-	void Timer2_Callback(void){
-		gpio_TooglePin(&userLed);
-		sendMsg = 1;
+void Timer2_Callback(void){
+	gpio_TooglePin(&userLed);
+	sendMsg = 1;
 
-	}
-	void Timer3_Callback(void){//este callback permitirá el switch de los digitos
-		__NOP();
-	}
-	void Timer4_Callback(void){//callback que incrementara el numero con el timer
-		__NOP();
-	}
-	void usart2_RxCCallback(void){
-		receivedChar = usart_getRxData();
-	}
+}
+void Timer3_Callback(void){//este callback permitirá el switch de los digitos
+	__NOP();
+}
+void Timer4_Callback(void){//callback que incrementara el numero con el timer
+	__NOP();
+}
+void usart2_RxCallback(void){
+	receivedChar = usart_getRxData();
+}
 
-	/*
-	 *Esta funcion sirve para detectar problemas de parametros
-	 *incorrectos
-	 **/
-	void assert_failed(uint8_t* file, uint32_t line){
-	    while(1){
-	        // problems
-	    }
+/*
+ *Esta funcion sirve para detectar problemas de parametros
+ *incorrectos
+ **/
+void assert_failed(uint8_t* file, uint32_t line){
+	while(1){
+		// problems
 	}
+}
 
 
 

@@ -203,6 +203,7 @@ static void usart_config_baudrate(USART_Handler_t *ptrUsartHandler){
 		// Valor a cargar 0x0683
 		// Configurando el Baudrate generator para una velocidad de 9600bps
 		ptrUsartHandler->ptrUSARTx->BRR = 0x0683;
+		break;
 		}
 		case USART_BAUDRATE_19200:
 		{
@@ -210,11 +211,12 @@ static void usart_config_baudrate(USART_Handler_t *ptrUsartHandler){
 		// Mantiza = 52 = 0x34, fraction = 16 * 0.1875 = 1
 			ptrUsartHandler->ptrUSARTx->BRR = 0x0341;
 
-			break;
+		break;
 		}
 		//se hizo en el cuaderno por flojera.
 		case USART_BAUDRATE_38400:{
 			ptrUsartHandler->ptrUSARTx->BRR = 0x01A1;
+		break;
 
 		}
 
@@ -243,7 +245,7 @@ static void usart_config_baudrate(USART_Handler_t *ptrUsartHandler){
 
 		default:
 			// Configurando el Baudrate generator para una velocidad de 115200bps
-			ptrUsartHandler->ptrUSARTx->BRR = 0x008B;
+			ptrUsartHandler->ptrUSARTx->BRR = 0x0008B;
 			break;
 		}
 

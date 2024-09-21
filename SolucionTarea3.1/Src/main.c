@@ -760,7 +760,7 @@ void init_system(void){
 	usart_Config(&usart2);
 
 	pinRX.pGPIOx = GPIOA;
-	pinRX.pinConfig.GPIO_PinNumber = PIN_3;
+	pinRX.pinConfig.GPIO_PinNumber		 = PIN_3;
 	pinRX.pinConfig.GPIO_PinMode		=	GPIO_MODE_ALTFN;
 	pinRX.pinConfig.GPIO_PinOutputType	=	GPIO_OTYPE_PUSHPULL;
 	pinRX.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;
@@ -770,7 +770,7 @@ void init_system(void){
 	gpio_Config(&pinRX);
 
 	pinTX.pGPIOx = GPIOA;
-	pinTX.pinConfig.GPIO_PinNumber = PIN_2;
+	pinTX.pinConfig.GPIO_PinNumber		 = PIN_2;
 	pinTX.pinConfig.GPIO_PinMode		=	GPIO_MODE_ALTFN;
 	pinTX.pinConfig.GPIO_PinOutputType	=	GPIO_OTYPE_PUSHPULL;
 	pinTX.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;

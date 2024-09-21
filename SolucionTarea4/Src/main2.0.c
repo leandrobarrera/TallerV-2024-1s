@@ -71,37 +71,37 @@ int main(void){
 void initSystem (void){
 
 	/*	LedRed*/
-	LedRed.pGPIOx 							= 	GPIOA;
-	LedRed.pinConfig.GPIO_PinNumber			=	PIN_0;
+	LedRed.pGPIOx 							= 	GPIOC;
+	LedRed.pinConfig.GPIO_PinNumber			=	PIN_6;
 	LedRed.pinConfig.GPIO_PinMode			=	GPIO_MODE_ALTFN;
 	LedRed.pinConfig.GPIO_PinOutputType		=	GPIO_OTYPE_PUSHPULL;
 	LedRed.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;
 	LedRed.pinConfig.GPIO_PinPuPdControl	=	GPIO_PUPDR_NOTHING;
-	LedRed.pinConfig.GPIO_PinAltFunMode 	=	AF1;
+	LedRed.pinConfig.GPIO_PinAltFunMode 	=	AF2;
 
 
 	gpio_Config(&LedRed);
 
 	/*	LedGreen	*/
-	LedGreen.pGPIOx 						= 	GPIOA;
-	LedGreen.pinConfig.GPIO_PinNumber		=	PIN_1;
+	LedGreen.pGPIOx 						= 	GPIOC;
+	LedGreen.pinConfig.GPIO_PinNumber		=	PIN_8;
 	LedGreen.pinConfig.GPIO_PinMode			=	GPIO_MODE_ALTFN;
 	LedGreen.pinConfig.GPIO_PinOutputType	=	GPIO_OTYPE_PUSHPULL;
 	LedGreen.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;
 	LedGreen.pinConfig.GPIO_PinPuPdControl	=	GPIO_PUPDR_NOTHING;
-	LedGreen.pinConfig.GPIO_PinAltFunMode 		=	AF1;
+	LedGreen.pinConfig.GPIO_PinAltFunMode 	=	AF2;
 
 
 	gpio_Config(&LedGreen);
 
 	/*	LedBlue	*/
-	LedBlue.pGPIOx 							= 	GPIOB;
-	LedBlue.pinConfig.GPIO_PinNumber		=	PIN_10;
+	LedBlue.pGPIOx 							= 	GPIOC;
+	LedBlue.pinConfig.GPIO_PinNumber		=	PIN_9;
 	LedBlue.pinConfig.GPIO_PinMode			=	GPIO_MODE_ALTFN;
 	LedBlue.pinConfig.GPIO_PinOutputType	=	GPIO_OTYPE_PUSHPULL;
 	LedBlue.pinConfig.GPIO_PinOutputSpeed	=	GPIO_OSPEED_MEDIUM;
 	LedBlue.pinConfig.GPIO_PinPuPdControl	=	GPIO_PUPDR_NOTHING;
-	LedBlue.pinConfig.GPIO_PinAltFunMode 		=	AF1;
+	LedBlue.pinConfig.GPIO_PinAltFunMode 	=	AF2;
 
 
 	gpio_Config(&LedBlue);
