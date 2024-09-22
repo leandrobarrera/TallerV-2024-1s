@@ -3,6 +3,9 @@
  *
  *  Created on: 10/09/2024
  *      Author: lbarreras
+ *
+ * Modificado en 2024 para reflejar los cambios en los nombres de
+ * las funciones y distribuir mejor las tareas.
  */
 
 #include "pwm_driver_hal.h"
@@ -39,14 +42,11 @@ void pwm_Config(PWM_Handler_t *ptrPwmHandler){
 	/* 1. Cargamos la frecuencia deseada */
 	pwm_Set_Frequency(ptrPwmHandler);
 
-	/* 2. Cargamos el valor del duty-Cycle*/
+	/* 2. Cargamos el valor del dutty-Cycle*/
 	pwm_Set_DuttyCycle(ptrPwmHandler);
 
 	/* 2a. Estamos en UP_Mode, el limite se carga en ARR y se comienza en 0 */
 	ptrPwmHandler->ptrTIMx->CR1 &= ~TIM_CR1_DIR;
-
-	//se fija un limite
-	ptrPwmHandler->ptrTIMx->ARR = ptrPwmHandler->config.periodo;
 
 	/* 3. Configuramos los bits CCxS del registro TIMy_CCMR1, de forma que sea modo salida
 	 * (para cada canal hay un conjunto CCxS)
@@ -158,7 +158,6 @@ void pwm_Enable_Output(PWM_Handler_t *ptrPwmHandler) {
 		break;
 	}
 
-	/* agregue acá su código para los otros tres casos */
 
 	default: {
 		break;
@@ -171,29 +170,29 @@ void pwm_Enable_Output(PWM_Handler_t *ptrPwmHandler) {
 void pwm_Disable_Output(PWM_Handler_t *ptrPwmHandler) {
 	switch (ptrPwmHandler->config.channel) {
 	case PWM_CHANNEL_1: {
-		// Activamos la salida del canal 1
+		// Desactivamos la salida del canal 1
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC1E;
 		break;
 	}
 	case PWM_CHANNEL_2: {
-		// Activamos la salida del canal 2
+		// Desactivamos la salida del canal 2
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC2E;
 		break;
 	}
 
 	case PWM_CHANNEL_3: {
-		// Activamos la salida del canal 3
+		// Desactivamos la salida del canal 3
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC3E;
 		break;
 	}
 
 	case PWM_CHANNEL_4: {
-		// Activamos la salida del canal 4
+		// Desactivamos la salida del canal 4
 		ptrPwmHandler->ptrTIMx->CCER &= ~TIM_CCER_CC4E;
 		break;
 	}
 
-	/* agregue acá su código para los otros tres casos */
+
 
 	default: {
 		break;
@@ -202,7 +201,7 @@ void pwm_Disable_Output(PWM_Handler_t *ptrPwmHandler) {
 }
 /*
  * La frecuencia es definida por el conjunto formado por el preescaler (PSC)
- * y el valor límite al que llega el Timer (ARR), con estos dos se establece
+ * y el valor limite al que llega el Timer (ARR), con estos dos se establece
  * la frecuencia.
  * */
 void pwm_Set_Frequency(PWM_Handler_t *ptrPwmHandler){
