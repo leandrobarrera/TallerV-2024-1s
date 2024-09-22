@@ -19,6 +19,8 @@
 #include "pwm_driver_hal.h"
 
 
+//RECORDAR QUE NO HAY BOTON DE RESET. SE SACO APARTE.
+
 // Definicion de los handlers necesario
 GPIO_Handler_t userLed = {0};
 
@@ -46,8 +48,8 @@ uint8_t i2c_AuxBuffer = {0};
 
 
 //variables
-uint8_t flag_updateAccel = 0;
-int16_t var_Accel = 0;
+uint8_t flag_updateAccel = 0; //bandera para la actualizacion de los datos entregados por el Acelerometro
+int16_t var_Accel = 0; // variable global del acel. para la funcion que se uso de parametrizar
 
 //Handlers para los tres timers que se pidieron
 PWM_Handler_t red_pwm = {0};
@@ -57,7 +59,7 @@ PWM_Handler_t green_pwm = {0};
 
 
 /* registros y valores relacionados con el MPU */
-#define ACCEL_ADDRESS	0b1101001;	// 0xD1 -> Direccion del Accel con Logic_0
+#define ACCEL_ADDRESS	0b1101001;	// 0xD1 -> Direccion del Accel con Logic_0 (buscado en internet)
 #define ACCEL_XOUT_H	59	// 0x3B
 #define ACCEL_XOUT_L	60	// 0x3C
 #define ACCEL_YOUT_H	61	// 0x3D
@@ -78,7 +80,7 @@ char bufferData[64] = "Accel MPU-6050 testing...\n";
 void initSystem(void);
 void config_LedRGB(void);
 void config_I2C(void);
-void param_rango(int16_t dataAccel);
+void param_rango(int16_t dataAccel); //funcion para parametrizar los datos recogidos del acel.
 
 /**
  * Funcion principal del programa.
@@ -96,7 +98,7 @@ int main(void){
 
 	usart_writeMsg(&commserial, greetingMsg);
 
-	i2c_WriteSingleRegisters(&accelSensor, PWM_MGMT_1, 0x00);
+	i2c_WriteSingleRegisters(&accelSensor, PWM_MGMT_1, 0x00); //se hace reseteo de los datos que se tengan.
 
 	/* Loop forever */
 	while(1){
@@ -113,21 +115,25 @@ int main(void){
 			}
 
 			if (receivedChar == 'w'){
-				sprintf(bufferData, "WHO_AM_I? (r)\n");
-				usart_writeMsg(&commserial, bufferData);
+			    /* Si el caracter recibido es 'w', se lee el registro WHO_AM_I del acelerometro */
+				sprintf(bufferData, "WHO_AM_I? (r)\n"); // Prepara el mensaje que indica que se va a leer el registro WHO_AM_I
+				usart_writeMsg(&commserial, bufferData); // Envia el mensaje por USART
 
-				i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, WHO_AM_I);
-				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2c_AuxBuffer);
-				usart_writeMsg(&commserial, bufferData);
-				receivedChar = '\0';
+				 /* Se lee el valor del registro WHO_AM_I del sensor a traves de I2C */
+				i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, WHO_AM_I); // Realiza la lectura del registro WHO_AM_I a traves de I2C
+				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2c_AuxBuffer); // Formatea el dato leido en hexadecimal
+				usart_writeMsg(&commserial, bufferData); // Envia el valor leido a través de USART
+				receivedChar = '\0'; /* Se resetea receivedChar para esperar un nuevo caracter */
 			}
 
 			else if (receivedChar == 'p'){
-				sprintf(bufferData, "PWM_MGMT_1_state (r)\n");
-				usart_writeMsg(&commserial, bufferData);
+				/* Si el caracter recibido es 'p', se lee el registro PWM_MGMT_1 del sensor */
+				sprintf(bufferData, "PWM_MGMT_1_state (r)\n"); // Prepara el mensaje para indicar que se va a leer el estado del registro PWM_MGMT_1
+				usart_writeMsg(&commserial, bufferData);// Envia el mensaje por USART
 
-				i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, PWM_MGMT_1);
-				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2c_AuxBuffer);
+				/* Se lee el valor del registro PWM_MGMT_1 del sensor */
+				i2c_AuxBuffer = i2c_ReadSingleRegister(&accelSensor, PWM_MGMT_1); // Lee el valor del registro PWM_MGMT_1
+				sprintf(bufferData, "dataRead = 0x%x \n", (unsigned int) i2c_AuxBuffer); // Formatea el valor leido en hexadecimal
 				usart_writeMsg(&commserial, bufferData);
 				receivedChar = '\0';
 			}
@@ -140,19 +146,24 @@ int main(void){
 				receivedChar = '\0';
 			}
 
+		    /* Si el caracter recibido es 'x', se leen los datos del eje X del acelerometro */
 			else if(receivedChar == 'x'){
-				sprintf(bufferData, "Axis x data  (r)\n ");
+
+				sprintf(bufferData, "Axis x data  (r)\n "); // Prepara el mensaje indicando que se leeran los datos del eje X
 				usart_writeMsg(&commserial, bufferData);
 
+			    /* Se leen los registros bajo y alto del eje X y se combinan en un valor de 16 bits. Esto es porque tenemos una variable de 16 bits pero toca dividirla en dos de 8 bits, y luego shiftearla */
 				uint8_t AccelLX_low  = i2c_ReadSingleRegister(&accelSensor, ACCEL_XOUT_L);
 				uint8_t AccelLX_high = i2c_ReadSingleRegister(&accelSensor, ACCEL_XOUT_H);
-				int16_t AccelX = AccelLX_high << 8 |  AccelLX_low;
-				sprintf(bufferData, "Accelx = %d \n",  (int) AccelX);
+				int16_t AccelX = AccelLX_high << 8 |  AccelLX_low; // se shiftea. Combina ambos bytes en un entero de 16 bits para obtener el valor total del eje X
+
+			    /* Se imprime el valor del eje X */
+				sprintf(bufferData, "Accelx = %d \n",  (int) AccelX); // El valor del eje X como decimal en el formato
 				usart_writeMsg(&commserial, bufferData);
 				receivedChar = '\0';
 
 				}
-			else if(receivedChar == 'y'){
+			else if(receivedChar == 'y'){ /* Para Y es lo mismo */
 				sprintf(bufferData, "Axis y data  (r)\n ");
 				usart_writeMsg(&commserial, bufferData);
 
@@ -164,7 +175,7 @@ int main(void){
 				receivedChar = '\0';
 
 				}
-			else if(receivedChar == 'z'){
+			else if(receivedChar == 'z'){ /* Para Z lo mismo */
 				sprintf(bufferData, "Axis z data  (r)\n ");
 				usart_writeMsg(&commserial, bufferData);
 
@@ -177,11 +188,15 @@ int main(void){
 
 				}
 			else if(receivedChar == 'q'){
-				sprintf(bufferData, "All 3 axis  (r)\n ");
+				/* Si el caracter recibido es 'q', se leen los datos de los tres ejes del acelerometro */
+				sprintf(bufferData, "All 3 axis  (r)\n "); // Prepara el mensaje indicando que se leeran los datos de los ejes X, Y y Z
 				usart_writeMsg(&commserial, bufferData);
 
-				uint8_t AccelData[6] = {0};
+			    /* Se leen los registros de los tres ejes X, Y y Z y se almacenan en un arreglo */
+				uint8_t AccelData[6] = {0}; // Arreglo de 6 bytes para almacenar los datos de los tres ejes (2 bytes por eje)
 				i2c_ReadManyRegisters(&accelSensor, ACCEL_XOUT_H, AccelData, 6);
+
+				 /* Se combinan los registros de alto y bajo para obtener valores de 16 bits de cada eje */
 				int16_t AccelX = AccelData[0] << 8 | AccelData[1];
 				int16_t AccelY = AccelData[2] << 8 | AccelData[3];
 				int16_t AccelZ = AccelData[4] << 8 | AccelData[5];
@@ -192,25 +207,38 @@ int main(void){
 
 			receivedChar = '\0';
 		}
-		if (flag_updateAccel){
 
+		/* Si la bandera flag_updateAccel esta activa (es 1), se actualizan los datos del acelerometro periodicamente */
+		if (flag_updateAccel){
+		    /* Se inicializa un arreglo de 6 bytes para almacenar los datos de los tres ejes del acelerometro (X, Y, Z) */
 			uint8_t AccelData[6] = {0};
 			i2c_ReadManyRegisters(&accelSensor, ACCEL_XOUT_H, AccelData, 6);
+
+		    /* Se combinan los bytes alto y bajo de cada eje para obtener los valores de 16 bits correspondientes a X, Y y Z */
 			int16_t AccelX = AccelData[0] << 8 | AccelData[1];
 			int16_t AccelY = AccelData[2] << 8 | AccelData[3];
 			int16_t AccelZ = AccelData[4] << 8 | AccelData[5];
+		    /* Se pone formato a los valores de los tres ejes para imprimirlos en un mensaje */
 			sprintf(bufferData, "Accel x,y,z -> %d %d %d \n", (int) AccelX, (int) AccelY, (int) AccelZ);
 			usart_writeMsg(&commserial, bufferData);
 			receivedChar = '\0';
 
-			 param_rango(AccelX);
-			 pwm_Update_DuttyCycle(&red_pwm, var_Accel);
+			/* Para esta funcion, se parametriza porque no podemos tomar valores mayores a 16438 aproximadamente, por tanto los que sean mayores no lo
+			 * manda a los extremos respectivos, para el positivo a 16438 y para el negativo -16438. Es importante recordar que como dato maximo
+			 * el acelerometro 6050 registra datos de -2g hasta 2g, es decir [-32876,32876]. El nuevo rango que usamos es [0,200].
+			 */
 
-			 param_rango(AccelY);
-			 pwm_Update_DuttyCycle(&green_pwm, var_Accel);
+		    /* Se ajusta el ciclo de trabajo (duty cycle) del PWM segun el valor del eje X */
+			 param_rango(AccelX); // Se ajusta la variable var_Accel segun el rango de AccelX
+			 pwm_Update_DuttyCycle(&red_pwm, var_Accel); // Se actualiza el PWM del color rojo
 
-			 param_rango(AccelZ);
-			 pwm_Update_DuttyCycle(&blue_pwm, var_Accel);
+			 /* Se ajusta el ciclo de trabajo del PWM segun el valor del eje Y */
+			 param_rango(AccelY); // Se ajusta la variable var_Accel segun el rango de AccelY
+			 pwm_Update_DuttyCycle(&green_pwm, var_Accel); // Se actualiza el PWM del color verde
+
+			 /* Se ajusta el ciclo de trabajo del PWM segun el valor del eje Z */
+			 param_rango(AccelZ); // Se ajusta la variable var_Accel segun el rango de AccelZ
+			 pwm_Update_DuttyCycle(&blue_pwm, var_Accel); // Se actualiza el PWM del color azul
 			 flag_updateAccel = 0;
 			}
 		   }
@@ -331,6 +359,7 @@ void config_I2C(void)
 void config_LedRGB(void)
 {
 
+
 		/*	LedRed*/
 		LedRed.pGPIOx 							= 	GPIOC;
 		LedRed.pinConfig.GPIO_PinNumber			=	PIN_6;
@@ -368,41 +397,54 @@ void config_LedRGB(void)
 		gpio_Config(&LedBlue);
 
 
+		/* Configuracion del PWM */
+
+
 		red_pwm.ptrTIMx = TIM3;
 		red_pwm.config.channel = PWM_CHANNEL_1;
 		red_pwm.config.periodo = 200;
-		red_pwm.config.prescaler = 160;
-		red_pwm.config.duttyCicle = 100;
+		red_pwm.config.prescaler = 160; // freq
+		red_pwm.config.duttyCicle = 100; /* Se define el ciclo de trabajo (dutty cycle) del PWM en 100 (50%) */
 
+		/* Se carga el PWM con los parametros establecidos */
 		pwm_Config(&red_pwm);
+		/* Se inicia la señal PWM en el canal y timer configurados para el color rojo */
 		pwm_Start_Signal(&red_pwm);
 
 		green_pwm.ptrTIMx = TIM3;
 		green_pwm.config.channel = PWM_CHANNEL_2;
 		green_pwm.config.periodo = 200;
-		green_pwm.config.prescaler = 160;
-		green_pwm.config.duttyCicle = 50;
+		green_pwm.config.prescaler = 160; // freq
+		green_pwm.config.duttyCicle = 50; /* Se define el ciclo de trabajo (dutty cycle) del PWM en 100 (25%) */
 
+		/* Se carga el PWM con los parametros establecidos */
 		pwm_Config(&green_pwm);
+		/* Se inicia la señal PWM en el canal y timer configurados para el color verde */
 		pwm_Start_Signal(&green_pwm);
 
 		blue_pwm.ptrTIMx = TIM3;
 		blue_pwm.config.channel = PWM_CHANNEL_4;
 		blue_pwm.config.periodo = 200;
-		blue_pwm.config.prescaler = 160;
-		blue_pwm.config.duttyCicle = 15;
+		blue_pwm.config.prescaler = 160; // freq
+		blue_pwm.config.duttyCicle = 15; /* Se define el ciclo de trabajo (dutty cycle) del PWM en 100 (7.5%) */
 
+		/* Se carga el PWM con los parametros establecidos */
 		pwm_Config(&blue_pwm);
+		/* Se inicia la señal PWM en el canal y timer configurados para el color azul */
 		pwm_Start_Signal(&blue_pwm);
 }
 
 
 void param_rango (int16_t dataAccel){
+    /* Si el valor del acelerometro es menor o igual a -16438, se ajusta a un valor minimo de -16200 */
 	if (dataAccel  <= -16438){
 		dataAccel = -16200;
-	}else if(dataAccel > 16438){
+	}
+    /* Si el valor del acelerometro es mayor a 16438, se ajusta a un valor maximo de 16438 */
+	else if(dataAccel > 16438){
 		dataAccel = 16438;
 	}
+    /* Se convierte el valor ajustado a un rango de 0 a 200, escalando el resultado */
 	var_Accel = (dataAccel/165) + 100;
 
 }
@@ -410,8 +452,8 @@ void param_rango (int16_t dataAccel){
 	 * Overwrite Function
 	 **/
 void Timer5_Callback(void){
-	gpio_TooglePin(&userLed);
-	sendMsg = 1;
+	gpio_TooglePin(&userLed); // Cambia el estado del pin de la LED
+	sendMsg = 1; // Activa la bandera para enviar un mensaje
 
 }
 void Timer2_Callback(void){//este callback permitirá el switch de los digitos
