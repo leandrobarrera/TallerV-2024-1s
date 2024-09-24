@@ -22,18 +22,18 @@
 //RECORDAR QUE NO HAY BOTON DE RESET. SE SACO APARTE.
 
 // Definicion de los handlers necesario
-GPIO_Handler_t userLed = {0};
+GPIO_Handler_t userLed = {0}; // PinA5
 
-GPIO_Handler_t LedRed = {0};
-GPIO_Handler_t LedGreen = {0};
-GPIO_Handler_t LedBlue = {0};
+GPIO_Handler_t LedRed = {0}; // PinC6
+GPIO_Handler_t LedGreen = {0}; // PinC7
+GPIO_Handler_t LedBlue = {0}; //PinC9
 
 // Comunicacion R232 con el PC, ya habilitada en el board ucleo
 // Utiliza la conexion USB
 USART_Handler_t commserial = {0};
 
-GPIO_Handler_t pinTx = {0};
-GPIO_Handler_t pinRx = {0};
+GPIO_Handler_t pinTx = {0}; //PinA2
+GPIO_Handler_t pinRx = {0}; //PinA3
 
 /* Timers */
 Timer_Handler_t blinkyTimer = {0};
@@ -41,8 +41,8 @@ Timer_Handler_t updateAccel= {0};
 
 
 /* Pines para el I2C */
-GPIO_Handler_t pinSCL = {0};
-GPIO_Handler_t pinSDA = {0};
+GPIO_Handler_t pinSCL = {0}; //PinB6
+GPIO_Handler_t pinSDA = {0}; //PinSDA
 I2C_Handler_t accelSensor = {0};
 uint8_t i2c_AuxBuffer = {0};
 
