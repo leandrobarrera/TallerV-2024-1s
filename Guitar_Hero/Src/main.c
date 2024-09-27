@@ -7,7 +7,11 @@
  * fecha 		   : 17/09/2024
  ******************************************************************************
  */
+
+/* ============== GUITAR HERO LEGENDS OF ROCK-8BIT ============== */
+
 #include <stdint.h>
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 #include "stm32f4xx.h"
@@ -29,7 +33,7 @@ GPIO_Handler_t botonIzquierdo = { 0 }; 		//	PinB8
 EXTI_Config_t exti_botonDerecho = { 0 };		//	Pin
 EXTI_Config_t exti_botonCentro = { 0 };		//	Pin
 EXTI_Config_t exti_botonIzquierdo = { 0 };		//	Pin
-
+PWM_Handler_t pwm_buzzer = { 0 };	// Pin
 //Variables
 
 //flags
@@ -37,9 +41,195 @@ uint8_t flag_botonDerecho;
 uint8_t flag_botonCentro;
 uint8_t flag_botonIzquierdo;
 
+//buzzer
+// change this to make the song slower or faster
+uint8_t tempo = 0;
+
+// change this to whichever pin you want to use
+uint8_t buzzer = 0;
+
+//Notas musicales
+#define NOTE_B0  31
+#define NOTE_C1  33
+#define NOTE_CS1 35
+#define NOTE_D1  37
+#define NOTE_DS1 39
+#define NOTE_E1  41
+#define NOTE_F1  44
+#define NOTE_FS1 46
+#define NOTE_G1  49
+#define NOTE_GS1 52
+#define NOTE_A1  55
+#define NOTE_AS1 58
+#define NOTE_B1  62
+#define NOTE_C2  65
+#define NOTE_CS2 69
+#define NOTE_D2  73
+#define NOTE_DS2 78
+#define NOTE_E2  82
+#define NOTE_F2  87
+#define NOTE_FS2 93
+#define NOTE_G2  98
+#define NOTE_GS2 104
+#define NOTE_A2  110
+#define NOTE_AS2 117
+#define NOTE_B2  123
+#define NOTE_C3  131
+#define NOTE_CS3 139
+#define NOTE_D3  147
+#define NOTE_DS3 156
+#define NOTE_E3  165
+#define NOTE_F3  175
+#define NOTE_FS3 185
+#define NOTE_G3  196
+#define NOTE_GS3 208
+#define NOTE_A3  220
+#define NOTE_AS3 233
+#define NOTE_B3  247
+#define NOTE_C4  262
+#define NOTE_CS4 277
+#define NOTE_D4  294
+#define NOTE_DS4 311
+#define NOTE_E4  330
+#define NOTE_F4  349
+#define NOTE_FS4 370
+#define NOTE_G4  392
+#define NOTE_GS4 415
+#define NOTE_A4  440
+#define NOTE_AS4 466
+#define NOTE_B4  494
+#define NOTE_C5  523
+#define NOTE_CS5 554
+#define NOTE_D5  587
+#define NOTE_DS5 622
+#define NOTE_E5  659
+#define NOTE_F5  698
+#define NOTE_FS5 740
+#define NOTE_G5  784
+#define NOTE_GS5 831
+#define NOTE_A5  880
+#define NOTE_AS5 932
+#define NOTE_B5  988
+#define NOTE_C6  1047
+#define NOTE_CS6 1109
+#define NOTE_D6  1175
+#define NOTE_DS6 1245
+#define NOTE_E6  1319
+#define NOTE_F6  1397
+#define NOTE_FS6 1480
+#define NOTE_G6  1568
+#define NOTE_GS6 1661
+#define NOTE_A6  1760
+#define NOTE_AS6 1865
+#define NOTE_B6  1976
+#define NOTE_C7  2093
+#define NOTE_CS7 2217
+#define NOTE_D7  2349
+#define NOTE_DS7 2489
+#define NOTE_E7  2637
+#define NOTE_F7  2794
+#define NOTE_FS7 2960
+#define NOTE_G7  3136
+#define NOTE_GS7 3322
+#define NOTE_A7  3520
+#define NOTE_AS7 3729
+#define NOTE_B7  3951
+#define NOTE_C8  4186
+#define NOTE_CS8 4435
+#define NOTE_D8  4699
+#define NOTE_DS8 4978
+#define REST      0
+
+void tone(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq, uint16_t duration);
+void noTone(PWM_Handler_t *ptrPwmHandler);
 void init_system(void);
 
 int main(void) {
+
+	// change this to make the song slower or faster
+	tempo = 108;
+
+	// change this to whichever pin you want to use
+	buzzer = 11;
+
+	// notes of the melody followed by the duration.
+	// a 4 means a quarter note, 8 an eighteenth , 16 sixteenth, so on
+	// !!negative numbers are used to represent dotted notes,
+	// so -4 means a dotted quarter note, that is, a quarter plus an eighteenth!!
+	int melody[256] = {
+
+			// Dart Vader theme (Imperial March) - Star wars
+			// Score available at https://musescore.com/user/202909/scores/1141521
+			// The tenor saxophone part was used
+
+			NOTE_AS4, 8, NOTE_AS4, 8, NOTE_AS4,
+			8,	  //1
+			NOTE_F5, 2, NOTE_C6, 2,
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6, 4,
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6, 4,
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_AS5, 8, NOTE_G5, 2, NOTE_C5, 8,
+			NOTE_C5, 8, NOTE_C5, 8,
+			NOTE_F5, 2, NOTE_C6, 2,
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6, 4,
+
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6,
+			4, //8
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_AS5, 8, NOTE_G5, 2, NOTE_C5, -8,
+			NOTE_C5, 16,
+			NOTE_D5, -4, NOTE_D5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
+			NOTE_F5, 8,
+			NOTE_F5, 8, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 4, NOTE_D5, 8, NOTE_E5,
+			4, NOTE_C5, -8, NOTE_C5, 16,
+			NOTE_D5, -4, NOTE_D5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
+			NOTE_F5, 8,
+
+			NOTE_C6, -8, NOTE_G5, 16, NOTE_G5, 2, REST, 8, NOTE_C5,
+			8, //13
+			NOTE_D5, -4, NOTE_D5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
+			NOTE_F5, 8,
+			NOTE_F5, 8, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 4, NOTE_D5, 8, NOTE_E5,
+			4, NOTE_C6, -8, NOTE_C6, 16,
+			NOTE_F6, 4, NOTE_DS6, 8, NOTE_CS6, 4, NOTE_C6, 8, NOTE_AS5, 4,
+			NOTE_GS5, 8, NOTE_G5, 4, NOTE_F5, 8,
+			NOTE_C6, 1
+
+	};
+
+	// sizeof gives the number of bytes, each int value is composed of two bytes (16 bits)
+	// there are two values per note (pitch and duration), so for each note there are four bytes
+	uint16_t notes = sizeof(melody) / sizeof(melody[0]) / 2;
+
+	// this calculates the duration of a whole note in ms
+	uint16_t wholenote = (60000 * 4) / tempo;
+
+	uint16_t divider = 0;
+	uint16_t noteDuration = 0;
+
+	// iterate over the notes of the melody.
+	// Remember, the array is twice the number of notes (notes + durations)
+	for (uint16_t thisNote = 0; thisNote < notes * 2; thisNote = thisNote + 2) {
+
+		// calculates the duration of each note
+		divider = melody[thisNote + 1];
+		if (divider > 0) {
+			// regular note, just proceed
+			noteDuration = (wholenote) / divider;
+		} else if (divider < 0) {
+			// dotted notes are represented with negative durations!!
+//		  noteDuration = (wholenote) / abs(divider);
+			noteDuration = (wholenote) / divider;
+			noteDuration *= 1.5; // increases the duration in half for dotted notes
+		}
+
+		// we only play the note for 90% of the duration, leaving 10% as a pause
+		tone(&pwm_buzzer, melody[thisNote], noteDuration * 0.9);
+
+		// Wait for the specief duration before playing the next note.
+		delay_ms(noteDuration);
+
+		// stop the waveform generation before the next note.
+		noTone(&pwm_buzzer);
+	}
 
 	init_system();
 
@@ -47,7 +237,6 @@ int main(void) {
 
 		if (flag_botonDerecho == 10) {
 			flag_botonDerecho = 0;
-
 
 		}
 
@@ -113,17 +302,17 @@ void init_system(void) {
 	/*Configuracion de los botones/EXTI */
 
 	exti_botonDerecho.pGPIOHandler = &botonDerecho;
-	exti_botonDerecho.edgeType = EXTERNAL_INTERRUPT_RISING_EDGE;
+	exti_botonDerecho.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
 
 	exti_Config(&exti_botonDerecho);
 
 	exti_botonCentro.pGPIOHandler = &botonCentro;
-	exti_botonCentro.edgeType = EXTERNAL_INTERRUPT_RISING_EDGE;
+	exti_botonCentro.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
 
 	exti_Config(&exti_botonCentro);
 
 	exti_botonIzquierdo.pGPIOHandler = &botonIzquierdo;
-	exti_botonIzquierdo.edgeType = EXTERNAL_INTERRUPT_RISING_EDGE;
+	exti_botonIzquierdo.edgeType = EXTERNAL_INTERRUPT_FALLING_EDGE;
 
 	exti_Config(&exti_botonIzquierdo);
 
@@ -140,13 +329,37 @@ void init_system(void) {
 	//	Encedemos el Timer.
 	timer_SetState(&blinkyTimer, SET);
 
+	pwm_buzzer.ptrTIMx = TIM3;
+	pwm_buzzer.config.channel = PWM_CHANNEL_1;
+	pwm_buzzer.config.periodo = 200;
+	pwm_buzzer.config.prescaler = 16; // freq
+	pwm_buzzer.config.duttyCicle = 100; /* Se define el ciclo de trabajo (dutty cycle) del PWM en 100 (50%) */
+
+	/* Se carga el PWM con los parametros establecidos */
+	pwm_Config(&pwm_buzzer);
+
 }
 
+void tone(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq, uint16_t duration) {
+
+	uint16_t newPeriod = 0;
+	newPeriod = 1000000 / newFreq;
+
+	pwm_Update_Frequency(ptrPwmHandler, newPeriod);
+	pwm_Update_DuttyCycle(ptrPwmHandler, duration);
+	pwm_Start_Signal(ptrPwmHandler);
+
+}
+void noTone(PWM_Handler_t *ptrPwmHandler) {
+	pwm_Stop_Signal(ptrPwmHandler);
+
+}
 //Callbacks del EXTI.
 
 void callback_ExtInt8(void) {
 
-	flag_botonDerecho += 1;
+	flag_botonDerecho = gpio_ReadPin(&botonDerecho);
+
 }
 
 void callback_ExtInt6(void) {
@@ -159,15 +372,13 @@ void callback_ExtInt5(void) {
 	flag_botonIzquierdo += 1;
 }
 
-
-
 //Callbacks de los timers
 
 /* este el callback del Led de estado, usamos el TooglePin para que se enciende y se apague, es la unico para lo
  * que nos sirve esta interrupcion. A grandes rasgos sirve para saber que el sistema funciona.
 
  Ademas de eso, agregamos la bandera para que se de la conversion de adc y la inicializacion de la variable sendMsg*/
-void Timer5_Callback(void){
+void Timer5_Callback(void) {
 	gpio_TooglePin(&userLed);
 
 }
