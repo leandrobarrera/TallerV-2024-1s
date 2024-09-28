@@ -10,7 +10,7 @@
 
 #include<stm32f4xx.h>
 
-#define SYSTICK_LOAD_VALUE_16Mhz_1ms 	16
+#define SYSTICK_LOAD_VALUE_16Mhz_1ms 	16000
 #define SYSTICK_LOAD_VALUE_100Mhz_1ms 	100000
 
 

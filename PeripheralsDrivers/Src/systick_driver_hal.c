@@ -61,7 +61,7 @@ void delay_ms(uint32_t wait_time_ms){
 
 	ticks_counting = getTicks_ms();
 
-	while(ticks_counting < (ticks_start + (uint64_t)wait_time_ms)){
+	while(ticks_counting < (ticks_start + (uint64_t) wait_time_ms)){
 		//actualizar el valor
 			ticks_counting = getTicks_ms();
 

@@ -22,6 +22,7 @@
 #include "i2c_driver_hal.h"
 #include "pwm_driver_hal.h"
 #include "exti_driver_hal.h"
+#include "systick_driver_hal.h"
 
 //Handlers
 
@@ -30,10 +31,25 @@ GPIO_Handler_t userLed = { 0 }; 	//	PinA5
 GPIO_Handler_t botonDerecho = { 0 }; 		//	PinC8
 GPIO_Handler_t botonCentro = { 0 }; 		//	PinB8
 GPIO_Handler_t botonIzquierdo = { 0 }; 		//	PinB8
+GPIO_Handler_t gpio_buzzer = { 0 }; 		//
 EXTI_Config_t exti_botonDerecho = { 0 };		//	Pin
 EXTI_Config_t exti_botonCentro = { 0 };		//	Pin
 EXTI_Config_t exti_botonIzquierdo = { 0 };		//	Pin
-PWM_Handler_t pwm_buzzer = { 0 };	// Pin
+PWM_Handler_t pwm_buzzer = { 0 };	// PinB2
+
+
+/* Pines para el I2C */
+GPIO_Handler_t pinSCL = {0}; //PinB6
+GPIO_Handler_t pinSDA = {0}; //PinSDA
+I2C_Handler_t accelSensor = {0};
+uint8_t i2c_AuxBuffer = {0};
+
+
+//variables
+uint8_t flag_updateAccel = 0; //bandera para la actualizacion de los datos entregados por el Acelerometro
+int16_t var_Accel = 0; // variable global del acel. para la funcion que se uso de parametrizar
+
+
 //Variables
 
 //flags
@@ -47,6 +63,13 @@ uint8_t tempo = 0;
 
 // change this to whichever pin you want to use
 uint8_t buzzer = 0;
+
+
+
+
+
+#define ACCEL_ADDRESS	0b0111100;	// Slave address bit (SA0)-> Direccion de la pantalla (buscado en internet)
+
 
 //Notas musicales
 #define NOTE_B0  31
@@ -138,13 +161,14 @@ uint8_t buzzer = 0;
 #define NOTE_CS8 4435
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
-#define REST      0
+#define REST 1
 
 void tone(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq, uint16_t duration);
 void noTone(PWM_Handler_t *ptrPwmHandler);
 void init_system(void);
 
 int main(void) {
+	init_system();
 
 	// change this to make the song slower or faster
 	tempo = 108;
@@ -156,58 +180,256 @@ int main(void) {
 	// a 4 means a quarter note, 8 an eighteenth , 16 sixteenth, so on
 	// !!negative numbers are used to represent dotted notes,
 	// so -4 means a dotted quarter note, that is, a quarter plus an eighteenth!!
-	int melody[256] = {
 
-			// Dart Vader theme (Imperial March) - Star wars
-			// Score available at https://musescore.com/user/202909/scores/1141521
-			// The tenor saxophone part was used
+	//Arreglar loop infinito
+	int melody[2048] = {
 
-			NOTE_AS4, 8, NOTE_AS4, 8, NOTE_AS4,
-			8,	  //1
-			NOTE_F5, 2, NOTE_C6, 2,
-			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6, 4,
-			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6, 4,
-			NOTE_AS5, 8, NOTE_A5, 8, NOTE_AS5, 8, NOTE_G5, 2, NOTE_C5, 8,
-			NOTE_C5, 8, NOTE_C5, 8,
-			NOTE_F5, 2, NOTE_C6, 2,
-			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6, 4,
+	REST, 4, NOTE_G5, 4,
+	NOTE_A5, 4, NOTE_AS5, 4,
+	NOTE_A5, 4, NOTE_F5, 4,
+	NOTE_A5, 4, NOTE_G5, 4,
+	REST, 4, NOTE_G5, 4,
+	NOTE_A5, 4, NOTE_AS5, 4,
+	NOTE_C6, 4, NOTE_AS5, 4,
 
-			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F6, 2, NOTE_C6,
+	NOTE_A5, 4, NOTE_G5,
 			4, //8
-			NOTE_AS5, 8, NOTE_A5, 8, NOTE_AS5, 8, NOTE_G5, 2, NOTE_C5, -8,
-			NOTE_C5, 16,
-			NOTE_D5, -4, NOTE_D5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
-			NOTE_F5, 8,
-			NOTE_F5, 8, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 4, NOTE_D5, 8, NOTE_E5,
-			4, NOTE_C5, -8, NOTE_C5, 16,
-			NOTE_D5, -4, NOTE_D5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
-			NOTE_F5, 8,
+			REST, 4, NOTE_G5, 4,
+			NOTE_A5, 4, NOTE_AS5, 4,
+			NOTE_A5, 4, NOTE_F5, 4,
+			NOTE_A5, 4, NOTE_G5, 4,
+			NOTE_D6, 4, REST, 8, NOTE_C6, 8,
+			REST, 4, NOTE_AS5, 4,
 
-			NOTE_C6, -8, NOTE_G5, 16, NOTE_G5, 2, REST, 8, NOTE_C5,
-			8, //13
-			NOTE_D5, -4, NOTE_D5, 8, NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8,
-			NOTE_F5, 8,
-			NOTE_F5, 8, NOTE_G5, 8, NOTE_A5, 8, NOTE_G5, 4, NOTE_D5, 8, NOTE_E5,
-			4, NOTE_C6, -8, NOTE_C6, 16,
-			NOTE_F6, 4, NOTE_DS6, 8, NOTE_CS6, 4, NOTE_C6, 8, NOTE_AS5, 4,
-			NOTE_GS5, 8, NOTE_G5, 4, NOTE_F5, 8,
-			NOTE_C6, 1
+			NOTE_A5, 4, NOTE_AS5, 8, NOTE_C6,
+			8, //15
+			NOTE_F6, 8, REST, 8, REST, 4,
+			NOTE_G5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
 
-	};
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5,
+			16, //20
+			NOTE_G5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+
+			NOTE_G5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5,
+			16, //25
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_AS5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_C6, 16, NOTE_C6, 16, NOTE_F6, 16, NOTE_D6, 8, REST, 16, REST,
+			8,
+			REST, 4, NOTE_C6, 16, NOTE_AS5, 16,
+
+			NOTE_C6, -8, NOTE_F6, -8, NOTE_D6,
+			-4, //35
+			NOTE_C6, 8, NOTE_AS5, 8,
+			NOTE_C6, 8, NOTE_F6, 16, NOTE_D6, 8, REST, 16, REST, 8,
+			REST, 4, NOTE_C6, 8, NOTE_D6, 8,
+			NOTE_DS6, -8, NOTE_F6, -8,
+
+			NOTE_D6, -8, REST, 16, NOTE_DS6, 8, REST,
+			8, //40
+			NOTE_C6, 8, NOTE_F6, 16, NOTE_D6, 8, REST, 16, REST, 8,
+			REST, 4, NOTE_C6, 8, NOTE_AS5, 8,
+			NOTE_C6, -8, NOTE_F6, -8, NOTE_D6, -4,
+			NOTE_C6, 8, NOTE_AS5, 8,
+
+			NOTE_C6, 8, NOTE_F6, 16, NOTE_D6, 8, REST, 16, REST,
+			8, //45
+			REST, 4, NOTE_C6, 8, NOTE_D6, 8,
+			NOTE_DS6, -8, NOTE_F6, -8,
+			NOTE_D5, 8, NOTE_FS5, 8, NOTE_F5, 8, NOTE_A5, 8,
+			NOTE_A5, -8, NOTE_G5, -4,
+
+			NOTE_A5, -8, NOTE_G5,
+			-4, //50
+			NOTE_A5, -8, NOTE_G5, -4,
+			NOTE_AS5, 8, NOTE_A5, 8, NOTE_G5, 8, NOTE_F5, 8,
+			NOTE_A5, -8, NOTE_G5, -8, NOTE_D5, 8,
+			NOTE_A5, -8, NOTE_G5, -8, NOTE_D5, 8,
+			NOTE_A5, -8, NOTE_G5, -8, NOTE_D5, 8,
+
+			NOTE_AS5, 4, NOTE_C6, 4, NOTE_A5, 4, NOTE_AS5, 4,
+			NOTE_G5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5,
+			16, //56 //r
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+
+			NOTE_G5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5,
+			16, //61
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_G5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5,
+			16, //66
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+			NOTE_AS5, 16, NOTE_D5, 16, NOTE_D6, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16,
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_A5, 16,
+			NOTE_D5, 16, NOTE_G5, 16, NOTE_D5, 16,
+
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5, 16, NOTE_C6, 16,
+			NOTE_D5, 16, NOTE_AS5, 16, NOTE_D5,
+			16, //71 //
+			NOTE_A5, 16, NOTE_D5, 16, NOTE_F5, 16, NOTE_D5, 16, NOTE_A5, 8,
+			NOTE_G5, 32, NOTE_A5, 32, NOTE_AS5, 32, NOTE_C6, 32,
+			NOTE_D6, 16, NOTE_G5, 16, NOTE_AS5, 16, NOTE_G5, 16, NOTE_C6, 16,
+			NOTE_G5, 16, NOTE_D6, 16, NOTE_G5, 16,
+			NOTE_C6, 16, NOTE_G5, 16, NOTE_A5, 16, NOTE_G5, 16, NOTE_F6, 16,
+			NOTE_G5, 16, NOTE_D6, 16, NOTE_DS5, 16,
+			NOTE_D6, 4, REST, 4,
+
+			NOTE_C5, 8, REST, 8, NOTE_A4, -16, NOTE_AS4, -16, NOTE_C5,
+			16, //76
+			NOTE_D6, 16, NOTE_G4, 16, NOTE_AS4, 16, NOTE_G4, 16, NOTE_C5, 16,
+			NOTE_G4, 16, NOTE_D6, 16, NOTE_G4, 16,
+			NOTE_C6, 16, NOTE_F4, 16, NOTE_A4, 16, NOTE_F4, 16, NOTE_F5, 16,
+			NOTE_F4, 16, NOTE_D6, 16, NOTE_DS4, 16,
+			NOTE_D6, 16, REST, 8, NOTE_E4, 16, NOTE_F4, 16,
+
+			//change of key B Major A# C# D# F# G#
+			NOTE_GS4, 8, REST, 8, NOTE_AS4, 8, REST, 8,
+
+			NOTE_DS5, 16, NOTE_GS4, 16, NOTE_B4, 16, NOTE_GS4, 16, NOTE_CS5, 16,
+			NOTE_GS4, 16, NOTE_DS5, 16, NOTE_GS4,
+			16, //81
+			NOTE_CS5, 16, NOTE_FS4, 16, NOTE_AS4, 16, NOTE_FS4, 16, NOTE_FS5,
+			16, NOTE_FS4, 16, NOTE_DS5, 16, NOTE_E5, 16,
+			NOTE_D5, 4, REST, 4,
+			NOTE_CS5, 8, REST, 8, NOTE_AS4, -16, NOTE_B4, -16, NOTE_CS5, 16,
+			NOTE_DS5, 16, NOTE_GS4, 16, NOTE_B4, 16, NOTE_GS4, 16, NOTE_CS5, 16,
+			NOTE_GS4, 16, NOTE_DS5, 16, NOTE_GS4, 16,
+
+			NOTE_CS5, 16, NOTE_FS4, 16, NOTE_AS4, 16, NOTE_FS4, 16, NOTE_FS5,
+			16, NOTE_FS4, 16, NOTE_DS5, 16, NOTE_E5, 16,
+			NOTE_DS5, 4, REST, 8, NOTE_DS5, 16, NOTE_E5, 16,
+			NOTE_FS5, 16, NOTE_CS5, 16, NOTE_E5, 16, NOTE_CS4, 16, NOTE_DS5, 16,
+			NOTE_E5, 16, NOTE_G5, 16, NOTE_AS5, 16,
+			NOTE_GS5, 16, NOTE_DS5, 16, NOTE_DS6, 16, NOTE_DS5, 16, NOTE_CS6,
+			16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_AS5, 16,
+			NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5,
+			16, //90
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_CS6, 16,
+			NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_FS5, 16, NOTE_DS5, 16, NOTE_AS5,
+			16, NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5, 16,
+			NOTE_GS5, 16, NOTE_DS5, 16, NOTE_DS6, 16, NOTE_DS5, 16, NOTE_CS6,
+			16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_AS5, 16,
+			NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5,
+			16, //94
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_CS6, 16,
+			NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_FS5, 16, NOTE_DS5, 16, NOTE_AS5,
+			16, NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5, 16,
+			NOTE_GS5, 16, NOTE_DS5, 16, NOTE_DS6, 16, NOTE_DS5, 16, NOTE_CS6,
+			16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_AS5, 16,
+			NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5,
+			16, //98
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_CS6, 16,
+			NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_FS5, 16, NOTE_DS5, 16, NOTE_AS5,
+			16, NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5, 16,
+			NOTE_GS5, 16, NOTE_DS5, 16, NOTE_DS6, 16, NOTE_DS5, 16, NOTE_CS6,
+			16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_AS5, 16,
+			NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5,
+			16, //102
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16, NOTE_CS6, 16,
+			NOTE_DS5, 16, NOTE_B5, 16, NOTE_DS5, 16,
+			NOTE_AS5, 16, NOTE_DS5, 16, NOTE_FS5, 16, NOTE_DS5, 16, NOTE_AS5,
+			16, NOTE_DS5, 16, NOTE_GS5, 16, NOTE_DS5, 16,
+
+			NOTE_CS6, 8, NOTE_FS6, 16, NOTE_DS6, 8, REST, 16, REST, 8, //107
+			REST, 4, NOTE_CS6, 8, NOTE_B5, 8,
+			NOTE_CS6, -8, NOTE_FS6, -8, NOTE_DS6, -4,
+			NOTE_CS6, 8, NOTE_B5, 8,
+			NOTE_CS6, 8, NOTE_FS6, 16, NOTE_DS6, 8, REST, 16, REST, 8,
+			REST, 4, NOTE_CS6, 8, NOTE_B5, 8,
+			NOTE_E6, -8, NOTE_F6, -8,
+
+			NOTE_DS6, -8, REST, 16, NOTE_E6, 8, REST, 16, REST, 16, //112
+			NOTE_CS6, 8, NOTE_FS6, 16, NOTE_DS6, 8, REST, 16, REST, 8,
+			REST, 4, NOTE_CS6, 8, NOTE_B5, 8,
+			NOTE_CS6, -8, NOTE_FS6, -8, NOTE_DS6, -4,
+			NOTE_CS6, 8, NOTE_B5, 8,
+
+			NOTE_CS6, 8, NOTE_FS6, 16, NOTE_DS6, 8, REST, 16, REST, 8, //117
+			REST, 4, NOTE_CS5, 8, NOTE_DS5, 8,
+			NOTE_E5, -8, NOTE_F5, -8,
+			NOTE_DS5, 8, NOTE_G5, 8, NOTE_GS5, 8, NOTE_AS5, 8,
+			NOTE_AS5, -8, NOTE_GS5, -8,
+
+			NOTE_AS5, -8, NOTE_GS5, -8, //122
+			NOTE_AS5, -8, NOTE_GS5, -8,
+			NOTE_B6, 8, NOTE_AS5, 8, NOTE_GS5, 8, NOTE_FS5, 8,
+			NOTE_AS5, -8, NOTE_GS6, -8, NOTE_DS5, 8,
+			NOTE_AS5, -8, NOTE_GS6, -8, NOTE_DS5, 8,
+			NOTE_AS5, -8, NOTE_GS6, -8, NOTE_DS5, 8,
+
+			NOTE_B5, 8, NOTE_CS6, 8, NOTE_AS5, 8, NOTE_B5, 8, //128
+			NOTE_GS5, 8, REST, 8, REST, 16 };
 
 	// sizeof gives the number of bytes, each int value is composed of two bytes (16 bits)
 	// there are two values per note (pitch and duration), so for each note there are four bytes
-	uint16_t notes = sizeof(melody) / sizeof(melody[0]) / 2;
+	int16_t notes = sizeof(melody) / 2;
 
 	// this calculates the duration of a whole note in ms
-	uint16_t wholenote = (60000 * 4) / tempo;
+	int16_t wholenote = (60000 * 4) / tempo;
 
-	uint16_t divider = 0;
-	uint16_t noteDuration = 0;
+	int16_t divider = 0;
+	int16_t noteDuration = 0;
 
 	// iterate over the notes of the melody.
 	// Remember, the array is twice the number of notes (notes + durations)
-	for (uint16_t thisNote = 0; thisNote < notes * 2; thisNote = thisNote + 2) {
+	for (int16_t thisNote = 0; thisNote < notes * 2; thisNote = thisNote + 2) {
 
 		// calculates the duration of each note
 		divider = melody[thisNote + 1];
@@ -216,9 +438,9 @@ int main(void) {
 			noteDuration = (wholenote) / divider;
 		} else if (divider < 0) {
 			// dotted notes are represented with negative durations!!
-//		  noteDuration = (wholenote) / abs(divider);
+//			noteDuration = (wholenote) / abs(divider);
 			noteDuration = (wholenote) / divider;
-			noteDuration *= 1.5; // increases the duration in half for dotted notes
+			noteDuration *= -1.5; // increases the duration in half for dotted notes
 		}
 
 		// we only play the note for 90% of the duration, leaving 10% as a pause
@@ -230,8 +452,6 @@ int main(void) {
 		// stop the waveform generation before the next note.
 		noTone(&pwm_buzzer);
 	}
-
-	init_system();
 
 	while (1) {
 
@@ -257,6 +477,7 @@ int main(void) {
 
 void init_system(void) {
 
+	config_SysTick_ms(0);
 	/*	Configuramos los pines*/
 
 	/* userLed */
@@ -329,21 +550,32 @@ void init_system(void) {
 	//	Encedemos el Timer.
 	timer_SetState(&blinkyTimer, SET);
 
-	pwm_buzzer.ptrTIMx = TIM3;
-	pwm_buzzer.config.channel = PWM_CHANNEL_1;
+	pwm_buzzer.ptrTIMx = TIM2;
+	pwm_buzzer.config.channel = PWM_CHANNEL_2;
 	pwm_buzzer.config.periodo = 200;
-	pwm_buzzer.config.prescaler = 16; // freq
-	pwm_buzzer.config.duttyCicle = 100; /* Se define el ciclo de trabajo (dutty cycle) del PWM en 100 (50%) */
+	pwm_buzzer.config.prescaler = 3; // freq
+	pwm_buzzer.config.duttyCicle = 1; /* Se define el ciclo de trabajo (dutty cycle) del PWM en 100 (50%) */
 
 	/* Se carga el PWM con los parametros establecidos */
 	pwm_Config(&pwm_buzzer);
+
+	/* Buzzer */
+	gpio_buzzer.pGPIOx = GPIOB;
+	gpio_buzzer.pinConfig.GPIO_PinNumber = PIN_3;
+	gpio_buzzer.pinConfig.GPIO_PinMode = GPIO_MODE_ALTFN;
+	gpio_buzzer.pinConfig.GPIO_PinOutputType = GPIO_OTYPE_PUSHPULL;
+	gpio_buzzer.pinConfig.GPIO_PinOutputSpeed = GPIO_OSPEED_MEDIUM;
+	gpio_buzzer.pinConfig.GPIO_PinPuPdControl = GPIO_PUPDR_NOTHING;
+	gpio_buzzer.pinConfig.GPIO_PinAltFunMode = AF1;
+
+	gpio_Config(&gpio_buzzer);
 
 }
 
 void tone(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq, uint16_t duration) {
 
 	uint16_t newPeriod = 0;
-	newPeriod = 1000000 / newFreq;
+	newPeriod = 5333333 / newFreq;
 
 	pwm_Update_Frequency(ptrPwmHandler, newPeriod);
 	pwm_Update_DuttyCycle(ptrPwmHandler, duration);
@@ -352,6 +584,37 @@ void tone(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq, uint16_t duration) {
 }
 void noTone(PWM_Handler_t *ptrPwmHandler) {
 	pwm_Stop_Signal(ptrPwmHandler);
+
+
+void config_I2C(void)
+{
+	pinSCL.pGPIOx 								= GPIOB;
+	pinSCL.pinConfig.GPIO_PinNumber        		= PIN_6;
+	pinSCL.pinConfig.GPIO_PinMode          		= GPIO_MODE_ALTFN;
+	pinSCL.pinConfig.GPIO_PinAltFunMode	  		= AF4;
+	pinSCL.pinConfig.GPIO_PinOutputType   		= GPIO_OTYPE_OPENDRAIN;
+	pinSCL.pinConfig.GPIO_PinOutputSpeed   	  	= GPIO_OSPEED_FAST;
+	pinSCL.pinConfig.GPIO_PinPuPdControl  		= GPIO_PUPDR_NOTHING;
+	gpio_Config(&pinSCL);
+
+	pinSDA.pGPIOx 								= GPIOB;
+	pinSDA.pinConfig.GPIO_PinNumber        		= PIN_9;
+	pinSDA.pinConfig.GPIO_PinMode          		= GPIO_MODE_ALTFN;
+	pinSDA.pinConfig.GPIO_PinAltFunMode	  		= AF4;
+	pinSDA.pinConfig.GPIO_PinOutputType    		= GPIO_OTYPE_OPENDRAIN;
+	pinSDA.pinConfig.GPIO_PinOutputSpeed   	  	= GPIO_OSPEED_FAST;
+	pinSDA.pinConfig.GPIO_PinPuPdControl   		= GPIO_PUPDR_NOTHING;
+	gpio_Config(&pinSDA);
+
+	accelSensor.pI2Cx  			= I2C1;
+	accelSensor.i2c_mainClock   = I2C_MAIN_CLOCK_16_Mhz;
+	accelSensor.i2c_mode		= eI2C_MODE_SM;
+	accelSensor.slaveAddress    = ACCEL_ADDRESS;
+	i2c_Config(&accelSensor);
+}
+
+
+
 
 }
 //Callbacks del EXTI.
