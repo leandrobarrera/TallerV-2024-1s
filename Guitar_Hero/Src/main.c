@@ -41,7 +41,7 @@ PWM_Handler_t pwm_buzzer = { 0 };	// PinB2
 /* Pines para el I2C */
 GPIO_Handler_t pinSCL = {0}; //PinB6
 GPIO_Handler_t pinSDA = {0}; //PinSDA
-I2C_Handler_t accelSensor = {0};
+I2C_Handler_t screen = {0};
 uint8_t i2c_AuxBuffer = {0};
 
 
