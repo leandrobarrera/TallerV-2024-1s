@@ -41,7 +41,7 @@ enum{
 
  }I2C_Handler_t;
 
- /*prototipos de las funcoines publicas */
+ /*prototipos de las funciones publicas */
  void i2c_Config(I2C_Handler_t *pHnadlerI2C);
  uint8_t i2c_ReadSingleRegister(I2C_Handler_t *pHanlderI2C, uint8_t regToRead);
  uint8_t i2c_ReadManyRegisters(I2C_Handler_t *pHandlerI2C, uint8_t regToRead, uint8_t *bufferData, uint8_t numberOfBytes);

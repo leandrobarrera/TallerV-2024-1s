@@ -151,30 +151,7 @@ int main(void){
 
 } // Fin main()
 
-/* ===== IMPORTANTE ADC =====
- * A continuación se muestran los pines que corresponden a
- * los diferentes canales del módulo ADC (Consersión Análogo Digital)
- *
- * 	CANAL ADC	PIN			USART		TX		RX
- *
- *	ADC1_0		PA0			USART2		PA2		PA3
- * 	ADC1_1		PA1			USART6		PC6		PC7
- * 	ADC1_2		PA2			USART1		PA9		PA10
- * 	ADC1_3		PA3			USART6		PA11	PA12
- * 	ADC1_4		PA4			USART1		PA15
- * 	ADC1_5		PA5			USART2		PD5		PD6
- * 	ADC1_6		PA6			USART1				PB3
- * 	ADC1_7		PA7			USART1		PB6		PB7
- * 	ADC1_8		PB0
- * 	ADC1_9		PB1
- * 	ADC1_10		PC0
- * 	ADC1_11		PC1
- * 	ADC1_12		PC2
- * 	ADC1_13		PC3
- * 	ADC1_14		PC4
- * 	ADC1_15		PC5
- *
- */
+
 
 /*
  * Definimos una función para inicializar las configuraciones
