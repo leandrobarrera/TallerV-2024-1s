@@ -615,6 +615,37 @@ void config_I2C(void)
 
 
 
+/* ========== MAIN PARA I2C ============== */
+
+/* Configuramos la pantalla OLED */
+	oled_Config(&i2c_handler);
+
+	/* Limpiamos la pantalla primero */
+	oled_clearDisplay(&i2c_handler);
+
+	sprintf((char *)bufferString, "BIENVENIDO A");
+		oled_setString(&i2c_handler, bufferString, NORMAL_DISPLAY, 12, 28, 1);
+
+		sprintf((char *)bufferString, "GUITAR TUNER");
+		oled_setString(&i2c_handler, bufferString, NORMAL_DISPLAY, 12, 28, 3);
+
+		sprintf((char *)bufferString, "EMPEZAR");
+		oled_setString(&i2c_handler, bufferString, NORMAL_DISPLAY, 7, 43, 5);
+
+
+		// 8. ===== I2C =====
+		/* Configuramos el I2C */
+		i2c_handler.ptrI2Cx				= I2C1;
+		i2c_handler.slaveAddress		= OLED_ADDRESS;
+		i2c_handler.modeI2C				= I2C_MODE_FM;
+
+
+		/* Cargamos la configuración del I2C */
+		i2c_Config(&i2c_handler);
+
+
+
+
 
 }
 //Callbacks del EXTI.
