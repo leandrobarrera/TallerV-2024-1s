@@ -442,3 +442,102 @@ void i2c_WriteManyRegisters(I2C_Handler_t *pHandlerI2C, uint8_t regToWrite, uint
 	/* 5. Generamos la condicion Stop, para que el slave se detenga despues de 1 byte */
 	i2c_send_close_comm(pHandlerI2C);
 }
+
+
+
+void i2c_StartTransaction(I2C_Handler_t *ptrHandlerI2C){
+
+	/* Solución a aparente problema al enciar al dirección del esclavo */
+	ptrHandlerI2C->pI2Cx->CR1 &= ~I2C_CR1_STOP;
+
+	/* 1. Verificamos que la línea no está ocupada - bit "Busy" del reg CR2 */
+	while(ptrHandlerI2C->pI2Cx->SR2 & I2C_SR2_BUSY){	// El ciclo se mantiene hasta que esté desocupada
+		__NOP();
+	}
+
+	/* 2. Generamos la señal "start" */
+	ptrHandlerI2C->pI2Cx->CR1 |= I2C_CR1_START;
+
+	/* 2a. Esperamos a que la bandera del evento "start" se levante.
+	 * Mientras esperamos, el valor de SB es 0, entonces la negación (!) es 1.
+	 */
+	while(!(ptrHandlerI2C->pI2Cx->SR1 & I2C_SR1_SB)){
+		__NOP();
+	}
+
+}
+
+
+	/*
+	 * Función para enviar la dirección del Slave con el que nos queremos
+	 * comunicar, y se indica si queremos Leer o Escribir en el dispositivo
+	 * con el que nos comunicamos a través del I2C.
+	 */
+	void i2c_SendSlaveAddressRW(I2C_Handler_t *ptrHandlerI2C, uint8_t slaveAddress, uint8_t readOrWrite){
+
+		/* 0. Definimos una variable auxiliar para leer los
+		 * registros para la secuencia de la bandera del ADDR
+		 */
+		uint8_t auxByte = 0;
+		(void) auxByte;
+
+		/* 1. Enviamos la dirección del Slave. En el bit menos significativo ponemos
+		 * el valor Lectura (1) o Escritura (0)
+		 */
+		ptrHandlerI2C->pI2Cx->DR = ((slaveAddress << 1) | readOrWrite);
+
+		/* 1a. Esperamos hasta que la bandera del evento ADDR se levante
+		 * (esto nos indica que la dirección fue enviada satisfactoriamente,
+		 * junto con el bit de Lectura o Escritura)
+		 */
+		while(!(ptrHandlerI2C->pI2Cx->SR1 & I2C_SR1_ADDR)){
+			__NOP();
+		}
+
+		/* 2. Debemos limpiar la bandera de la recepción de ACK del ADDR, para
+		 * lo cual debemos leer en secuencia el I2C_SR1 y luego el I2C_SR2
+		 */
+		auxByte = ptrHandlerI2C->pI2Cx->SR1;
+		auxByte = ptrHandlerI2C->pI2Cx->SR2;
+
+	} // Fin del i2c_SendSlaveAddressRW
+
+
+
+	/*
+	 * Función para enviar la dirección de memoria
+	 */
+	void i2c_SendMemoryAddress(I2C_Handler_t *ptrHandlerI2C, uint8_t memAddress){
+		/* Enviamos la dirección de memoria que deseamos leer */
+		ptrHandlerI2C->pI2Cx->DR = memAddress;
+
+		/* Esperamos hasta que el byte sea transmitido */
+		while(!(ptrHandlerI2C->pI2Cx->SR1 & I2C_SR1_TXE)){
+			__NOP();
+		}
+	}
+
+
+
+	/*
+	 * Función para enviar un solo Byte al dispositivo Slave
+	 */
+	void i2c_SendDataByte(I2C_Handler_t *ptrHandlerI2C, uint8_t dataToWrite){
+		/* Cargamos el valor que deseamos escribir */
+		ptrHandlerI2C->pI2Cx->DR = dataToWrite;
+
+		/* Esperamos hasta que el byte sea transmitido */
+		while(!(ptrHandlerI2C->pI2Cx->SR1 & I2C_SR1_BTF)){
+			__NOP();
+		}
+	}
+
+
+
+	/*
+	 * Función para la parada de la transmisión por I2C
+	 */
+	void i2c_StopTransaction(I2C_Handler_t *ptrHandlerI2C){
+		ptrHandlerI2C->pI2Cx->CR1 |= I2C_CR1_STOP;
+	}
+

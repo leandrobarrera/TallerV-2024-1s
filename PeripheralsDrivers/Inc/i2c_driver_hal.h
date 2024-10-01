@@ -48,6 +48,17 @@ enum{
  void i2c_WriteSingleRegisters(I2C_Handler_t *pHandlerI2C, uint8_t regToWrite, uint8_t newValue);
  void i2c_WriteManyRegisters(I2C_Handler_t *pHandlerI2C, uint8_t regToWrite, uint8_t *bufferRxData, uint8_t numberOfBytes);
 
+
+ /*nuevas funciones*/
+ void i2c_StartTransaction(I2C_Handler_t *ptrHandlerI2C);
+ void i2c_SendSlaveAddressRW(I2C_Handler_t *ptrHandlerI2C, uint8_t slaveAddress, uint8_t readOrWrite);
+ void i2c_SendMemoryAddress(I2C_Handler_t *ptrHandlerI2C, uint8_t memAddress);
+ void i2c_SendDataByte(I2C_Handler_t *ptrHandlerI2C, uint8_t dataToWrite);
+ void i2c_StopTransaction(I2C_Handler_t *ptrHandlerI2C);
+
+
+
+
  //void i2c_setPins(GPIO_Hnalder_t	*setSdaPin,  GPIO_Handler_t *setScalPin);
  //void i2c_clearBussyFlagsState(I2C_Handler_t *pHandlerI2C);
 

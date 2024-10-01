@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file           : main.c
- * @author         :
+ * @author         : lbarreras
  * @brief          : Prueba para implementar la pantalla OLED (prueba de funcionamiento)
  ******************************************************************************
  **/
@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
-#include "arm_math.h"
+
 
 #include "stm32f4xx.h"
 #include "stm32_assert.h"
@@ -28,8 +28,7 @@ GPIO_Handler_t pinSCL_I2C = {0};
 GPIO_Handler_t pinSDA_I2C = {0};
 I2C_Handler_t i2c_handler = {0};
 
-// Handler del SysTick
-Systick_Handler_t systick = {0};
+
 
 /* Elementos para la comunicacion serial */
 USART_Handler_t commSerial = {0};
@@ -58,8 +57,8 @@ int main(void){
 		/* Prueba del USART */
 		if (usart2DataReceived == 't'){
 
-			usart_WriteMsg(&commSerial, "\r\n");
-			usart_WriteMsg(&commSerial, "¿Probando? ¡Funciona! Ouh-Yeah! \n\r");
+			usart_writeMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "¿Probando? ¡Funciona!  \n\r");
 			usart2DataReceived = '\0';
 		}
 
@@ -67,20 +66,16 @@ int main(void){
 		/* Prueba comunicación serial con la pantalla */
 		if (usart2DataReceived == 'a'){
 
-			usart_WriteMsg(&commSerial, "\r\n");
-			usart_WriteMsg(&commSerial, "Intento de comunicación \r\n");
+			usart_writeMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "Intento de comunicación \r\n");
 			usart2DataReceived = '\0';
 
 			uint8_t auxRead = 0;
-			i2c_StartTransaction(&i2c_handler);
-			i2c_SendSlaveAddressRW(&i2c_handler, i2c_handler.slaveAddress, 1);
 
-			auxRead = i2c_ReadDataByte(&i2c_handler);
-			i2c_StopTransaction(&i2c_handler);
 
-			usart_WriteMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "\r\n");
 			sprintf(bufferMsg, "Respuesta Slave: %u\r\n", (auxRead >> 6 & 1));
-			usart_WriteMsg(&commSerial, bufferMsg);
+			usart_writeMsg(&commSerial, bufferMsg);
 
 			usart2DataReceived = '\0';
 
@@ -91,8 +86,8 @@ int main(void){
 		if (usart2DataReceived == '1'){
 
 			oled_onDisplay(&i2c_handler);
-			usart_WriteMsg(&commSerial, "\r\n");
-			usart_WriteMsg(&commSerial, "OLED encendida \r\n");
+			usart_writeMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "OLED encendida \r\n");
 
 			usart2DataReceived = '\0';
 		}
@@ -101,8 +96,8 @@ int main(void){
 		if (usart2DataReceived == '2'){
 
 			oled_offDisplay(&i2c_handler);
-			usart_WriteMsg(&commSerial, "\r\n");
-			usart_WriteMsg(&commSerial, "OLED apagada \r\n");
+			usart_writeMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "OLED apagada \r\n");
 
 			usart2DataReceived = '\0';
 		}
@@ -115,8 +110,8 @@ int main(void){
 									 0xD9, 0xF1, 0xDA, 0x12, 0xDB, 0x20, 0x8D, 0x14,
 									 0xAF, 0xAF};
 			oled_sendCommand(&i2c_handler, array, 26);
-			usart_WriteMsg(&commSerial, "\r\n");
-			usart_WriteMsg(&commSerial, "Comando finalizado -> Debe leer 0\r\n");
+			usart_writeMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "Comando finalizado -> Debe leer 0\r\n");
 
 			usart2DataReceived = '\0';
 		}
@@ -124,8 +119,8 @@ int main(void){
 		/* Apagar la OLED */
 		if (usart2DataReceived == 'y'){
 
-			usart_WriteMsg(&commSerial, "\r\n");
-			usart_WriteMsg(&commSerial, "Pintando negro\r\n");
+			usart_writeMsg(&commSerial, "\r\n");
+			usart_writeMsg(&commSerial, "Pintando negro\r\n");
 
 			usart2DataReceived = '\0';
 
@@ -260,9 +255,9 @@ void configPeripherals(void){
 
 	// 6. ===== I2C =====
 	/* Configuramos el I2C */
-	i2c_handler.ptrI2Cx				= I2C1;
+	i2c_handler.pI2Cx				= I2C1;
 	i2c_handler.slaveAddress		= OLED_ADDRESS;
-	i2c_handler.modeI2C				= I2C_MODE_FM;
+	i2c_handler.i2c_mode				= eI2C_MODE_FM;
 
 	/* Cargamos la configuración del I2C */
 	i2c_Config(&i2c_handler);
@@ -270,15 +265,9 @@ void configPeripherals(void){
 
 	// 7. ===== SYSTICK =====
 	/* Configuramos el Systick */
-	systick.pSystick						= SYSTICK;
-	systick.Systick_Config.Systick_Reload	= SYSTICK_PSC_1ms;
-	systick.Systick_Config.Systick_IntState = SYSTICK_INT_ENABLE;
+	config_SysTick_ms(0);
 
-	/* Cargamos la configuración del systick */
-	systick_Config(&systick);
 
-	/* Encendemos el Systick */
-	systick_SetState(&systick, SYSTICK_ON);
 
 
 }	// Fin de la configuración de los periféricos
@@ -293,7 +282,7 @@ void Timer2_Callback(void){
 
 
 void usart2_RxCallback(void){
-	usart2DataReceived = usart2_getRxData();
+	usart2DataReceived = usart_getRxData();
 }
 
 /*
