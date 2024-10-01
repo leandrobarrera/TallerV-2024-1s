@@ -23,6 +23,7 @@
 #include "pwm_driver_hal.h"
 #include "exti_driver_hal.h"
 #include "systick_driver_hal.h"
+#include "oled_driver.h"
 
 //Handlers
 
