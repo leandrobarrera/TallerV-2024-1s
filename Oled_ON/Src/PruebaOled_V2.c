@@ -18,7 +18,6 @@
 #include "timer_driver_hal.h"
 #include "usart_driver_hal.h"
 #include "i2c_driver_hal.h"
-
 #include "oled_driver.h"
 
 // Definicion de los Handlers necesario
@@ -204,7 +203,7 @@ void configPeripherals(void){
 	gpio_Config(&pinRx);
 
 
-	/* Usamos el PinB8 para SCL */
+	/* Usamos el PinB6 para SCL */
 	pinSCL_I2C.pGPIOx								= GPIOB;
 	pinSCL_I2C.pinConfig.GPIO_PinNumber				= PIN_6;
 	pinSCL_I2C.pinConfig.GPIO_PinMode				= GPIO_MODE_ALTFN;

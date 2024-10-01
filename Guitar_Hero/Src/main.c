@@ -25,6 +25,12 @@
 #include "systick_driver_hal.h"
 #include "oled_driver.h"
 
+
+
+
+
+
+
 //Handlers
 
 Timer_Handler_t blinkyTimer = { 0 };
@@ -38,12 +44,20 @@ EXTI_Config_t exti_botonCentro = { 0 };		//	Pin
 EXTI_Config_t exti_botonIzquierdo = { 0 };		//	Pin
 PWM_Handler_t pwm_buzzer = { 0 };	// PinB2
 
+/* Elementos para la comunicacion serial  llevar nuevo */
+uint8_t usart2DataReceived = 0;
+char	bufferMsg[64] = {0};
+USART_Handler_t commSerial = {0};
+GPIO_Handler_t pinTx = {0};
+GPIO_Handler_t pinRx = {0};
 
-/* Pines para el I2C */
+
+/* Handlers para el I2C */
 GPIO_Handler_t pinSCL = {0}; //PinB6
 GPIO_Handler_t pinSDA = {0}; //PinB9
 I2C_Handler_t screen = {0};
 uint8_t i2c_AuxBuffer = {0};
+I2C_Handler_t i2c_handler = {0};
 
 
 //variables
@@ -456,6 +470,8 @@ int main(void) {
 
 	while (1) {
 
+
+
 		if (flag_botonDerecho == 10) {
 			flag_botonDerecho = 0;
 
@@ -468,9 +484,113 @@ int main(void) {
 		if (flag_botonIzquierdo == 10) {
 			flag_botonIzquierdo = 0;
 
+
+
+
+			/* Prueba del USART */
+			if (usart2DataReceived == 't'){
+
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "¿Probando? ¡Funciona!  \n\r");
+				usart2DataReceived = '\0';
+			}
+
+
+			/* Prueba comunicación serial con la pantalla */
+			if (usart2DataReceived == 'a'){
+
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "Intento de comunicación \r\n");
+				usart2DataReceived = '\0';
+
+				uint8_t auxRead = 0;
+
+
+				usart_writeMsg(&commSerial, "\r\n");
+				sprintf(bufferMsg, "Respuesta Slave: %u\r\n", (auxRead >> 6 & 1));
+				usart_writeMsg(&commSerial, bufferMsg);
+
+				usart2DataReceived = '\0';
+
+
+			}
+
+			/* Encender la OLED */
+			if (usart2DataReceived == '1'){
+
+				oled_onDisplay(&i2c_handler);
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "OLED encendida \r\n");
+
+				usart2DataReceived = '\0';
+			}
+
+			/* Apagar la OLED */
+			if (usart2DataReceived == '2'){
+
+				oled_offDisplay(&i2c_handler);
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "OLED apagada \r\n");
+
+				usart2DataReceived = '\0';
+			}
+
+			/* Configura la OLED */
+			if (usart2DataReceived == 'c'){
+
+				uint8_t array[26] = 	{0xAE, 0x00, 0x10,0x40, 0xB0, 0x81, 0xCF, 0xA1,
+										 0xA6, 0xA8, 0x3F, 0xC8, 0xD3, 0x00, 0xD5, 0x80,
+										 0xD9, 0xF1, 0xDA, 0x12, 0xDB, 0x20, 0x8D, 0x14,
+										 0xAF, 0xAF};
+				oled_sendCommand(&i2c_handler, array, 26);
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "Comando finalizado -> Debe leer 0\r\n");
+
+				usart2DataReceived = '\0';
+			}
+
+			/* Apagar la OLED */
+			if (usart2DataReceived == 'y'){
+
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "Pintando negro\r\n");
+
+				usart2DataReceived = '\0';
+
+				uint8_t array[128] = {0};
+				array[127] = 0b11111111;
+
+				oled_Config(&i2c_handler);
+
+				oled_sendData(&i2c_handler, array, 128);
+
+			}
+
+			/* Apagar la OLED */
+			if (usart2DataReceived == 'x'){
+
+				usart2DataReceived = '\0';
+			}
+
+			if (usart2DataReceived == 'd'){
+				usart_writeMsg(&commSerial, "\r\n");
+				usart_writeMsg(&commSerial, "limpiando pantalla \r\n");
+
+				usart2DataReceived = '\0';
+
+				oled_Config(&i2c_handler);
+
+				oled_clearDisplay(&i2c_handler);
+			}
+
+
+
+
 		}
 
 	}
+
+	return 0;
 
 }
 
@@ -571,6 +691,43 @@ void init_system(void) {
 
 	gpio_Config(&gpio_buzzer);
 
+	// 4. ===== USARTS =====
+	/* Configurando el puerto serial USART2 */
+
+	commSerial.ptrUSARTx					= USART2;
+	commSerial.USART_Config.baudrate		= USART_BAUDRATE_115200;
+	commSerial.USART_Config.datasize		= USART_DATASIZE_8BIT;
+	commSerial.USART_Config.parity			= USART_PARITY_NONE;
+	commSerial.USART_Config.stopbits		= USART_STOPBIT_1;
+	commSerial.USART_Config.mode			= USART_MODE_RXTX;
+	commSerial.USART_Config.enableIntRX		= USART_RX_INTERRUP_ENABLE;
+
+	/* Cargamos la configuración de USART */
+	usart_Config(&commSerial);
+
+	/*
+	 * Escribimos el caracter nulo para asegurarnos de empezar
+	 * una transmisión "limpia"
+	 */
+	usart_WriteChar(&commSerial, '\0');
+
+
+	// 6. ===== I2C =====
+	/* Configuramos el I2C */
+	i2c_handler.pI2Cx				= I2C1;
+	i2c_handler.slaveAddress		= OLED_ADDRESS;
+	i2c_handler.i2c_mode				= eI2C_MODE_FM;
+
+	/* Cargamos la configuración del I2C */
+	i2c_Config(&i2c_handler);
+
+
+	// 7. ===== SYSTICK =====
+	/* Configuramos el Systick */
+	config_SysTick_ms(0);
+
+
+
 }
 
 void tone(PWM_Handler_t *ptrPwmHandler, uint16_t newFreq, uint16_t duration) {
@@ -607,42 +764,26 @@ void config_I2C(void)
 	pinSDA.pinConfig.GPIO_PinPuPdControl   		= GPIO_PUPDR_NOTHING;
 	gpio_Config(&pinSDA);
 
-	accelSensor.pI2Cx  			= I2C1;
-	accelSensor.i2c_mainClock   = I2C_MAIN_CLOCK_16_Mhz;
-	accelSensor.i2c_mode		= eI2C_MODE_SM;
-	accelSensor.slaveAddress    = ACCEL_ADDRESS;
-	i2c_Config(&accelSensor);
+
 }
 
 
+// 7. ===== SYSTICK =====
+	/* Configuramos el Systick */
+	config_SysTick_ms(0);
 
-/* ========== MAIN PARA I2C ============== */
-
-/* Configuramos la pantalla OLED */
-	oled_Config(&i2c_handler);
-
-	/* Limpiamos la pantalla primero */
-	oled_clearDisplay(&i2c_handler);
-
-	sprintf((char *)bufferString, "BIENVENIDO A");
-		oled_setString(&i2c_handler, bufferString, NORMAL_DISPLAY, 12, 28, 1);
-
-		sprintf((char *)bufferString, "GUITAR TUNER");
-		oled_setString(&i2c_handler, bufferString, NORMAL_DISPLAY, 12, 28, 3);
-
-		sprintf((char *)bufferString, "EMPEZAR");
-		oled_setString(&i2c_handler, bufferString, NORMAL_DISPLAY, 7, 43, 5);
 
 
 		// 8. ===== I2C =====
 		/* Configuramos el I2C */
-		i2c_handler.ptrI2Cx				= I2C1;
+		i2c_handler.pI2Cx				= I2C1;
 		i2c_handler.slaveAddress		= OLED_ADDRESS;
-		i2c_handler.modeI2C				= I2C_MODE_FM;
+		i2c_handler.i2c_mode			= eI2C_MODE_FM;
 
 
 		/* Cargamos la configuración del I2C */
 		i2c_Config(&i2c_handler);
+
 
 
 
@@ -676,6 +817,11 @@ void callback_ExtInt5(void) {
 void Timer5_Callback(void) {
 	gpio_TooglePin(&userLed);
 
+}
+
+/* Callback usart2 */
+void usart2_RxCallback(void){
+	usart2DataReceived = usart_getRxData();
 }
 
 /*
