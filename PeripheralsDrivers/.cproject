@@ -76,9 +76,6 @@
 							<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec.1772499543" name="MCU Output Converter Motorola S-rec with symbols" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec"/>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.lib.debug.549852717.874198172" name="i2c_driver_hal.c" rcbsApplicability="disable" resourcePath="Src/i2c_driver_hal.c" toolsToInvoke="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1680442353.1617478877">
-						<tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1680442353.1617478877" name="MCU GCC Compiler" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.1680442353"/>
-					</fileInfo>
 					<fileInfo id="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.lib.debug.549852717.1677020243" name="stm32_assert.h" rcbsApplicability="disable" resourcePath="Inc/stm32_assert.h" toolsToInvoke=""/>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>

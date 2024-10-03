@@ -58,7 +58,7 @@ uint8_t unidades = 0;
 uint8_t decenas = 0;
 uint8_t centenas = 0;
 uint8_t millares = 0;
-
+uint8_t pinClockc = 0;
 
 
 
@@ -142,6 +142,9 @@ int main(void)
 
 
 	while(1){
+
+
+		pinClockc = gpio_ReadPin(&pinClock);
 
 		//se usa la bandera para que cuando presionemos m se muestre el mensaje escrito.
 

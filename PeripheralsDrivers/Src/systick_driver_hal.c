@@ -56,7 +56,7 @@ uint64_t getTicks_ms(void){
 
 }
 
-void delay_ms(uint32_t wait_time_ms){
+void systick_Delay_ms(uint32_t wait_time_ms){
 	ticks_start = getTicks_ms();
 
 	ticks_counting = getTicks_ms();

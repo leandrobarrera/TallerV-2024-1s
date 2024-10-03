@@ -16,6 +16,6 @@
 
 void config_SysTick_ms(uint8_t systemClock);
 uint64_t getTicks_ms(void);
-void delay_ms(uint32_t wait_time_ms);
+void systick_Delay_ms(uint32_t wait_time_ms);
 
 #endif /*SYSTICKDRIVER_H_*/

@@ -54,6 +54,10 @@ int main(void)
 
 
 	while(1){
+
+		gpio_ReadPin(&LedD);
+
+
 		if (contador == 60){
 			contador = 0;
 		}
